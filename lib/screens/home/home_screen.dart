@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:jeevandhara/screens/advice/advice_screen.dart';
+import 'package:jeevandhara/screens/chat/chat_screen.dart';
+import 'package:jeevandhara/screens/scan/scan_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -30,6 +33,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+
+    if (index == 1) { // Advice tab
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AdviceScreen()),
+      );
+    } else if (index == 2) { // Scan tab
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ScanScreen()),
+      );
+    } else if (index == 3) { // Chat tab
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ChatScreen()),
+      );
+    }
   }
 
   @override
@@ -134,19 +160,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildInsightsRow() {
-    return const Row(
+    return Row(
       children: [
-        Expanded(
+        const Expanded(
           child: _InsightCard(
             title: 'Add Data',
             icon: Icons.add,
           ),
         ),
-        SizedBox(width: 16),
+        const SizedBox(width: 16),
         Expanded(
-          child: _InsightCard(
-            title: 'Crop Advice',
-            icon: Icons.eco,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AdviceScreen()),
+              );
+            },
+            child: const _InsightCard(
+              title: 'Crop Advice',
+              icon: Icons.eco,
+            ),
           ),
         ),
       ],
@@ -254,6 +288,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildBottomNavigationBar() {
     return BottomNavigationBar(
+      currentIndex: _currentIndex,
+      onTap: _onItemTapped,
       type: BottomNavigationBarType.fixed,
       selectedItemColor: const Color(0xFF4CAF50),
       unselectedItemColor: Colors.grey,
