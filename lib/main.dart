@@ -106,18 +106,10 @@ class LanguageSelectionScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Logo
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF4CAF50),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.eco,
-                          size: 60,
-                          color: Colors.white,
-                        ),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width: 150, // Adjust size as needed
+                        height: 150, // Adjust size as needed
                       ),
                       const SizedBox(height: 16),
                       // App Name

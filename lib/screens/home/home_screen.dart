@@ -36,26 +36,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _onItemTapped(int index) {
+    if (index == 0) return; // Already on Home
+
     setState(() {
       _currentIndex = index;
     });
 
-    if (index == 1) { // Advice tab
-      Navigator.push(
+    Future<void>? navigation;
+
+    if (index == 1) {
+      // Advice tab
+      navigation = Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const AdviceScreen()),
       );
-    } else if (index == 2) { // Scan tab
-      Navigator.push(
+    } else if (index == 2) {
+      // Scan tab
+      navigation = Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ScanScreen()),
       );
-    } else if (index == 3) { // Chat tab
-      Navigator.push(
+    } else if (index == 3) {
+      // Chat tab
+      navigation = Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ChatScreen()),
       );
     }
+
+    // When the pushed screen is popped (back button), reset to Home tab.
+    navigation?.then((_) {
+      if (!mounted) return;
+      setState(() {
+        _currentIndex = 0;
+      });
+    });
   }
 
   @override
