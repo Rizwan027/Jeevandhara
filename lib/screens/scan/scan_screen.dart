@@ -1,10 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:jeevandhara/screens/advice/advice_screen.dart';
 import 'package:jeevandhara/screens/home/home_screen.dart';
+import 'package:jeevandhara/screens/chat/chat_screen.dart';
 
-class ScanScreen extends StatelessWidget {
+class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
+
+  @override
+  State<ScanScreen> createState() => _ScanScreenState();
+}
+
+class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  bool _isScanning = false;
+  String? _scanResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _startScanning() async {
+    setState(() {
+      _isScanning = true;
+      _scanResult = null;
+    });
+
+    // Simulate scanning process
+    await Future.delayed(const Duration(seconds: 3));
+    
+    setState(() {
+      _isScanning = false;
+      _scanResult = 'healthy'; // Mock result
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
