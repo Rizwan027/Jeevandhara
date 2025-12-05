@@ -4,9 +4,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
 class WeatherService {
-  static const String _apiKey = 'YOUR_OPENWEATHER_API_KEY'; // You'll need to add your API key
+  static const String _apiKey =
+      '9504d3db9f8d098b58292d89bd29f882'; // Replace with your OpenWeatherMap API key
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
-  
+
   // Get current location
   Future<Position?> getCurrentLocation() async {
     try {
@@ -17,7 +18,7 @@ class WeatherService {
           return null;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         return null;
       }
@@ -53,13 +54,17 @@ class WeatherService {
         return _getFallbackWeather();
       }
 
-      final url = '$_baseUrl/weather?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric';
+      final url =
+          '$_baseUrl/weather?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final cityName = await getCityName(position.latitude, position.longitude);
-        
+        final cityName = await getCityName(
+          position.latitude,
+          position.longitude,
+        );
+
         return WeatherData.fromJson(data, cityName);
       } else {
         return _getFallbackWeather();
@@ -78,14 +83,18 @@ class WeatherService {
         return _getFallbackForecast();
       }
 
-      final url = '$_baseUrl/forecast?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric';
+      final url =
+          '$_baseUrl/forecast?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> forecasts = data['list'];
-        
-        return forecasts.take(5).map((forecast) => WeatherForecast.fromJson(forecast)).toList();
+
+        return forecasts
+            .take(5)
+            .map((forecast) => WeatherForecast.fromJson(forecast))
+            .toList();
       } else {
         return _getFallbackForecast();
       }
@@ -96,63 +105,82 @@ class WeatherService {
   }
 
   // Generate weather alerts for farming
-  List<WeatherAlert> generateFarmingAlerts(WeatherData weather, List<WeatherForecast> forecast) {
+  List<WeatherAlert> generateFarmingAlerts(
+    WeatherData weather,
+    List<WeatherForecast> forecast,
+  ) {
     List<WeatherAlert> alerts = [];
 
     // High temperature alert
     if (weather.temperature > 35) {
-      alerts.add(WeatherAlert(
-        title: 'High Temperature Alert',
-        message: 'Temperature is ${weather.temperature.round()}°C. Consider extra irrigation for crops.',
-        severity: AlertSeverity.warning,
-        icon: '🌡️',
-        actionRequired: true,
-      ));
+      alerts.add(
+        WeatherAlert(
+          title: 'High Temperature Alert',
+          message:
+              'Temperature is ${weather.temperature.round()}°C. Consider extra irrigation for crops.',
+          severity: AlertSeverity.warning,
+          icon: '🌡️',
+          actionRequired: true,
+        ),
+      );
     }
 
     // Heavy rain alert
-    if (weather.humidity > 80 && weather.description.toLowerCase().contains('rain')) {
-      alerts.add(WeatherAlert(
-        title: 'Heavy Rain Expected',
-        message: 'High humidity (${weather.humidity}%) and rain predicted. Ensure proper drainage.',
-        severity: AlertSeverity.urgent,
-        icon: '🌧️',
-        actionRequired: true,
-      ));
+    if (weather.humidity > 80 &&
+        weather.description.toLowerCase().contains('rain')) {
+      alerts.add(
+        WeatherAlert(
+          title: 'Heavy Rain Expected',
+          message:
+              'High humidity (${weather.humidity}%) and rain predicted. Ensure proper drainage.',
+          severity: AlertSeverity.urgent,
+          icon: '🌧️',
+          actionRequired: true,
+        ),
+      );
     }
 
     // Wind alert
     if (weather.windSpeed > 20) {
-      alerts.add(WeatherAlert(
-        title: 'Strong Wind Alert',
-        message: 'Wind speed ${weather.windSpeed} km/h. Secure lightweight crops and equipment.',
-        severity: AlertSeverity.warning,
-        icon: '💨',
-        actionRequired: true,
-      ));
+      alerts.add(
+        WeatherAlert(
+          title: 'Strong Wind Alert',
+          message:
+              'Wind speed ${weather.windSpeed} km/h. Secure lightweight crops and equipment.',
+          severity: AlertSeverity.warning,
+          icon: '💨',
+          actionRequired: true,
+        ),
+      );
     }
 
     // Drought warning
     if (weather.humidity < 30 && weather.temperature > 30) {
-      alerts.add(WeatherAlert(
-        title: 'Drought Conditions',
-        message: 'Low humidity (${weather.humidity}%) and high temperature. Increase irrigation frequency.',
-        severity: AlertSeverity.urgent,
-        icon: '☀️',
-        actionRequired: true,
-      ));
+      alerts.add(
+        WeatherAlert(
+          title: 'Drought Conditions',
+          message:
+              'Low humidity (${weather.humidity}%) and high temperature. Increase irrigation frequency.',
+          severity: AlertSeverity.urgent,
+          icon: '☀️',
+          actionRequired: true,
+        ),
+      );
     }
 
     // Check forecast for upcoming alerts
     for (var day in forecast) {
       if (day.description.toLowerCase().contains('storm')) {
-        alerts.add(WeatherAlert(
-          title: 'Storm Warning',
-          message: 'Storm expected in next few days. Prepare crops and equipment.',
-          severity: AlertSeverity.urgent,
-          icon: '⛈️',
-          actionRequired: true,
-        ));
+        alerts.add(
+          WeatherAlert(
+            title: 'Storm Warning',
+            message:
+                'Storm expected in next few days. Prepare crops and equipment.',
+            severity: AlertSeverity.urgent,
+            icon: '⛈️',
+            actionRequired: true,
+          ),
+        );
         break;
       }
     }
@@ -174,11 +202,31 @@ class WeatherService {
 
   List<WeatherForecast> _getFallbackForecast() {
     return [
-      WeatherForecast(date: DateTime.now().add(const Duration(days: 1)), temperature: 29.0, description: 'Sunny'),
-      WeatherForecast(date: DateTime.now().add(const Duration(days: 2)), temperature: 26.0, description: 'Light Rain'),
-      WeatherForecast(date: DateTime.now().add(const Duration(days: 3)), temperature: 31.0, description: 'Partly Cloudy'),
-      WeatherForecast(date: DateTime.now().add(const Duration(days: 4)), temperature: 28.0, description: 'Cloudy'),
-      WeatherForecast(date: DateTime.now().add(const Duration(days: 5)), temperature: 30.0, description: 'Sunny'),
+      WeatherForecast(
+        date: DateTime.now().add(const Duration(days: 1)),
+        temperature: 29.0,
+        description: 'Sunny',
+      ),
+      WeatherForecast(
+        date: DateTime.now().add(const Duration(days: 2)),
+        temperature: 26.0,
+        description: 'Light Rain',
+      ),
+      WeatherForecast(
+        date: DateTime.now().add(const Duration(days: 3)),
+        temperature: 31.0,
+        description: 'Partly Cloudy',
+      ),
+      WeatherForecast(
+        date: DateTime.now().add(const Duration(days: 4)),
+        temperature: 28.0,
+        description: 'Cloudy',
+      ),
+      WeatherForecast(
+        date: DateTime.now().add(const Duration(days: 5)),
+        temperature: 30.0,
+        description: 'Sunny',
+      ),
     ];
   }
 }
@@ -249,8 +297,4 @@ class WeatherAlert {
   });
 }
 
-enum AlertSeverity {
-  info,
-  warning,
-  urgent,
-}
+enum AlertSeverity { info, warning, urgent }
