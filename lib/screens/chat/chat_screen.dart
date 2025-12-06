@@ -9,7 +9,9 @@ import 'package:jeevandhara/screens/scan/scan_screen.dart';
 import 'package:jeevandhara/services/ai_service.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final bool showBottomNav;
+  
+  const ChatScreen({super.key, this.showBottomNav = true});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -231,10 +233,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, color: Color(0xFF2E7D32)),
-                    ),
+                    if (widget.showBottomNav)
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, color: Color(0xFF2E7D32)),
+                      ),
+                    if (!widget.showBottomNav)
+                      const SizedBox(width: 16),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -589,17 +594,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         if (index == 0) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const HomeScreen(showBottomNav: true)),
           );
         } else if (index == 1) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const AdviceScreen()),
+            MaterialPageRoute(builder: (_) => const AdviceScreen(showBottomNav: true)),
           );
         } else if (index == 2) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const ScanScreen()),
+            MaterialPageRoute(builder: (_) => const ScanScreen(showBottomNav: true)),
           );
         } else if (index == 4) {
           // TODO: Implement Settings screen navigation

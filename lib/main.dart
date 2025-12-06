@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'localization/app_localizations.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'widgets/main_navigation.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,7 +54,8 @@ class MyAppState extends State<MyApp> {
       ],
       home: const LanguageSelectionScreen(),
       routes: {
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const MainNavigation(),
+        '/main': (context) => const MainNavigation(),
       },
     );
   }

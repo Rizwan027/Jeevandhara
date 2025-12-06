@@ -127,6 +127,59 @@ What would you like to know?""";
     }
   }
 
+  Future<Map<String, dynamic>> analyzePlantHealth(String imagePath) async {
+    try {
+      // For now, simulate AI crop analysis with mock data
+      // In production, this would send the image to AI service for crop analysis
+      
+      await Future.delayed(const Duration(seconds: 3)); // Simulate processing time
+      
+      // Mock crop analysis result with agricultural focus
+      final cropTypes = ['Rice', 'Wheat', 'Cotton', 'Sugarcane', 'Maize', 'Tomato'];
+      final selectedCrop = cropTypes[DateTime.now().millisecond % cropTypes.length];
+      
+      return {
+        'status': 'Your $selectedCrop crop appears healthy with good growth indicators. No significant diseases detected at this growth stage.',
+        'confidence': 0.87,
+        'crop_type': selectedCrop,
+        'growth_stage': 'Vegetative Growth',
+        'recommendations': '''
+🌾 Farming Recommendations for $selectedCrop:
+
+💧 **Irrigation Management:**
+• Water requirement: 25-30mm per week
+• Maintain soil moisture at 80% field capacity
+• Avoid waterlogging during current growth stage
+
+🌱 **Nutrient Management:**
+• Apply Urea: 50kg/hectare (split application)
+• DAP: 25kg/hectare at base
+• Potash: 20kg/hectare before flowering
+
+🔍 **Health Score: 87/100 (Excellent)**
+
+⚠️ **Monitor For:**
+• Early signs of pest infestation
+• Yellowing of lower leaves (nitrogen deficiency)
+• Fungal diseases in humid conditions
+''',
+        'diseases_detected': [],
+        'pests_detected': [],
+        'nutrient_status': 'Adequate',
+        'yield_prediction': '4.2-4.8 tons/hectare',
+        'analysis_date': DateTime.now().toIso8601String(),
+      };
+    } catch (e) {
+      print('Crop Analysis Error: $e');
+      return {
+        'status': 'Analysis completed. Please consult with agricultural experts for detailed crop management.',
+        'confidence': 0.0,
+        'recommendations': 'Unable to provide specific recommendations. Please try again or consult with local agricultural extension officers.',
+        'error': true,
+      };
+    }
+  }
+
   // Method to check if AI service is available
   bool isAIAvailable() {
     return _apiKey != 'YOUR_GEMINI_API_KEY_HERE' && _apiKey.isNotEmpty;

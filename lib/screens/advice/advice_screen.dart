@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:jeevandhara/screens/home/home_screen.dart';
-import 'package:jeevandhara/screens/scan/scan_screen.dart';
 import 'package:jeevandhara/screens/chat/chat_screen.dart';
 
 class AdviceScreen extends StatefulWidget {
-  const AdviceScreen({super.key});
+  final bool showBottomNav;
+  
+  const AdviceScreen({super.key, this.showBottomNav = true});
 
   @override
   State<AdviceScreen> createState() => _AdviceScreenState();
 }
 
-class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMixin {
+class _AdviceScreenState extends State<AdviceScreen>
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  
+
   String _selectedCategory = 'Crops';
   int _selectedSeason = 0; // 0: Current, 1: Next, 2: Year-round
 
   final List<String> _seasons = ['Current Season', 'Next Season', 'Year-round'];
-  
+
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Crops', 'icon': FontAwesomeIcons.seedling},
     {'name': 'Tips', 'icon': FontAwesomeIcons.lightbulb},
@@ -135,15 +136,23 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E7D32)),
-                        ),
+                        if (widget.showBottomNav)
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                        if (!widget.showBottomNav)
+                          const SizedBox(width: 16),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFF4CAF50,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const FaIcon(
@@ -180,7 +189,9 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const ChatScreen()),
+                              MaterialPageRoute(
+                                builder: (context) => const ChatScreen(showBottomNav: true),
+                              ),
                             );
                           },
                           icon: const FaIcon(
@@ -256,7 +267,7 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: isSelected 
+                    color: isSelected
                         ? const Color(0xFF4CAF50).withValues(alpha: 0.3)
                         : Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
@@ -277,7 +288,9 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: isSelected ? Colors.white : const Color(0xFF4CAF50),
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF4CAF50),
                     ),
                   ),
                 ],
@@ -313,13 +326,22 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
                   });
                 },
                 child: Container(
-                  margin: EdgeInsets.only(right: index < _seasons.length - 1 ? 8 : 0),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  margin: EdgeInsets.only(
+                    right: index < _seasons.length - 1 ? 8 : 0,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF4CAF50).withValues(alpha: 0.1) : Colors.white,
+                    color: isSelected
+                        ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF4CAF50) : Colors.grey[300]!,
+                      color: isSelected
+                          ? const Color(0xFF4CAF50)
+                          : Colors.grey[300]!,
                     ),
                   ),
                   child: Text(
@@ -327,7 +349,9 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: isSelected ? const Color(0xFF4CAF50) : Colors.grey[600],
+                      color: isSelected
+                          ? const Color(0xFF4CAF50)
+                          : Colors.grey[600],
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -353,10 +377,12 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
           ),
         ),
         const SizedBox(height: 16),
-        ..._filteredCrops.map((crop) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _buildModernCropCard(crop),
-        )),
+        ..._filteredCrops.map(
+          (crop) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildModernCropCard(crop),
+          ),
+        ),
       ],
     );
   }
@@ -427,13 +453,25 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
           Row(
             children: [
               Expanded(
-                child: _buildMetricItem('Profit', crop.profit, FontAwesomeIcons.indianRupeeSign),
+                child: _buildMetricItem(
+                  'Profit',
+                  crop.profit,
+                  FontAwesomeIcons.indianRupeeSign,
+                ),
               ),
               Expanded(
-                child: _buildMetricItem('Yield', crop.yieldValue, FontAwesomeIcons.chartLine),
+                child: _buildMetricItem(
+                  'Yield',
+                  crop.yieldValue,
+                  FontAwesomeIcons.chartLine,
+                ),
               ),
               Expanded(
-                child: _buildMetricItem('Water', crop.waterRequirement, FontAwesomeIcons.droplet),
+                child: _buildMetricItem(
+                  'Water',
+                  crop.waterRequirement,
+                  FontAwesomeIcons.droplet,
+                ),
               ),
             ],
           ),
@@ -446,18 +484,27 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
                   children: [
                     Text(
                       'Planting: ${crop.plantingTime}',
-                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Harvest: ${crop.harvestTime}',
-                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -493,10 +540,7 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
         ),
         Text(
           label,
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            color: Colors.grey[600],
-          ),
+          style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey[600]),
         ),
       ],
     );
@@ -504,44 +548,82 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
 
   Widget _buildFarmingTips() {
     final tips = [
-      {'title': 'Soil Preparation', 'desc': 'Test soil pH before planting', 'icon': FontAwesomeIcons.seedling},
-      {'title': 'Water Management', 'desc': 'Install drip irrigation system', 'icon': FontAwesomeIcons.droplet},
-      {'title': 'Pest Control', 'desc': 'Use integrated pest management', 'icon': FontAwesomeIcons.bug},
+      {
+        'title': 'Soil Preparation',
+        'desc': 'Test soil pH before planting',
+        'icon': FontAwesomeIcons.seedling,
+      },
+      {
+        'title': 'Water Management',
+        'desc': 'Install drip irrigation system',
+        'icon': FontAwesomeIcons.droplet,
+      },
+      {
+        'title': 'Pest Control',
+        'desc': 'Use integrated pest management',
+        'icon': FontAwesomeIcons.bug,
+      },
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: tips.map((tip) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
+      children: tips
+          .map(
+            (tip) => Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: FaIcon(tip['icon'] as IconData, color: const Color(0xFF4CAF50), size: 16),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(tip['title'] as String, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
-                  Text(tip['desc'] as String, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: FaIcon(
+                      tip['icon'] as IconData,
+                      color: const Color(0xFF4CAF50),
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tip['title'] as String,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          tip['desc'] as String,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-      )).toList(),
+          )
+          .toList(),
     );
   }
 
@@ -551,20 +633,38 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
             children: [
-              const FaIcon(FontAwesomeIcons.cloudSun, color: Color(0xFFFF9800), size: 24),
+              const FaIcon(
+                FontAwesomeIcons.cloudSun,
+                color: Color(0xFFFF9800),
+                size: 24,
+              ),
               const SizedBox(width: 12),
-              Text('Weather Forecast', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+              Text(
+                'Weather Forecast',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          Text('Moderate rain expected this week. Good for rice transplantation.', 
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600])),
+          Text(
+            'Moderate rain expected this week. Good for rice transplantation.',
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+          ),
         ],
       ),
     );
@@ -576,20 +676,38 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
             children: [
-              const FaIcon(FontAwesomeIcons.chartLine, color: Color(0xFF4CAF50), size: 24),
+              const FaIcon(
+                FontAwesomeIcons.chartLine,
+                color: Color(0xFF4CAF50),
+                size: 24,
+              ),
               const SizedBox(width: 12),
-              Text('Market Trends', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+              Text(
+                'Market Trends',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          Text('Rice prices up 8%. Wheat demand steady. Good selling opportunity.', 
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600])),
+          Text(
+            'Rice prices up 8%. Wheat demand steady. Good selling opportunity.',
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
+          ),
         ],
       ),
     );

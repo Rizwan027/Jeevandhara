@@ -4,10 +4,14 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:jeevandhara/screens/advice/advice_screen.dart';
 import 'package:jeevandhara/screens/chat/chat_screen.dart';
 import 'package:jeevandhara/screens/scan/scan_screen.dart';
+import 'package:jeevandhara/screens/input_data/input_data_screen.dart';
 import 'package:jeevandhara/services/weather_service.dart';
+import 'package:jeevandhara/services/ai_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool showBottomNav;
+  
+  const HomeScreen({super.key, this.showBottomNav = true});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -17,16 +21,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
   late WeatherService _weatherService;
+  late AIService _aiService;
   
   int _currentIndex = 0;
   WeatherData? _currentWeather;
   List<WeatherAlert> _weatherAlerts = [];
+  List<WeatherForecast> _weatherForecast = [];
+  String _aiRecommendation = '';
   bool _isLoadingWeather = true;
+  bool _isLoadingAI = true;
 
   @override
   void initState() {
     super.initState();
     _weatherService = WeatherService();
+    _aiService = AIService();
     
     _animationController = AnimationController(
       vsync: this,
@@ -38,8 +47,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
     _animationController.forward();
     
-    // Load weather data
+    // Load weather data and AI recommendations
     _loadWeatherData();
+    _loadAIRecommendations();
   }
 
   Future<void> _loadWeatherData() async {
@@ -53,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (mounted) {
           setState(() {
             _currentWeather = weather;
+            _weatherForecast = forecast;
             _weatherAlerts = alerts;
             _isLoadingWeather = false;
           });
@@ -63,6 +74,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (mounted) {
         setState(() {
           _isLoadingWeather = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadAIRecommendations() async {
+    try {
+      String weatherContext = '';
+      if (_currentWeather != null) {
+        weatherContext = 'Current weather: ${_currentWeather!.temperature.round()}°C, ${_currentWeather!.description}, ${_currentWeather!.humidity}% humidity. ';
+      }
+      
+      final recommendation = await _aiService.getAgriculturalAdvice(
+        '${weatherContext}Give me 3 important farming recommendations for today based on current conditions.'
+      );
+      
+      if (mounted) {
+        setState(() {
+          _aiRecommendation = recommendation;
+          _isLoadingAI = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading AI recommendations: $e');
+      if (mounted) {
+        setState(() {
+          _aiRecommendation = '''🌾 Today's Farming Tips:
+
+• Check soil moisture levels - water if dry
+• Monitor crops for pest activity 
+• Apply organic fertilizer if needed
+
+💡 Use our AI chat for personalized advice!''';
+          _isLoadingAI = false;
         });
       }
     }
@@ -87,19 +132,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       // Scan tab
       navigation = Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const ScanScreen()),
+        MaterialPageRoute(builder: (context) => const ScanScreen(showBottomNav: true)),
       );
     } else if (index == 2) {
       // Chat tab
       navigation = Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const ChatScreen()),
+        MaterialPageRoute(builder: (context) => const ChatScreen(showBottomNav: true)),
       );
     } else if (index == 3) {
       // Advice tab
       navigation = Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const AdviceScreen()),
+        MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true)),
       );
     } else if (index == 4) {
       // Profile tab - TODO: implement profile screen
@@ -204,14 +249,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Insights Section
-                    _buildSectionTitle('Today\'s Insights'),
-                    const SizedBox(height: 16),
-                    _buildInsightCards(),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Alerts Section  
+                    // Today's Alerts Section
                     _buildSectionTitle('Today\'s Alerts'),
                     const SizedBox(height: 16),
                     _buildAlertCards(),
@@ -221,7 +259,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     // Soil Status Section
                     _buildSectionTitle('Soil Status'),
                     const SizedBox(height: 16),
-                    _buildSoilStatusCard(),
+                    _buildEnhancedSoilStatusCard(),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Weather Forecast Section
+                    _buildSectionTitle('Weather Forecast'),
+                    const SizedBox(height: 16),
+                    _buildWeatherForecastCard(),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // AI Recommendations Section
+                    _buildAIRecommendationsSection(),
                     
                     const SizedBox(height: 20), // Bottom padding
                   ],
@@ -231,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: widget.showBottomNav ? BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
@@ -266,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             label: 'Profile',
           ),
         ],
-      ),
+      ) : null,
     );
   }
 
@@ -286,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             'Crop\nAdvice',
             Icons.eco_outlined,
             const Color(0xFF10B981),
-            () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AdviceScreen())),
+            () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true))),
           ),
         ),
         const SizedBox(width: 16),
@@ -295,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             'Add\nData',
             Icons.add_circle_outline,
             const Color(0xFF3B82F6),
-            () {},
+            () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InputDataScreen())),
           ),
         ),
       ],
@@ -456,7 +506,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         fontSize: 12,
                         color: const Color(0xFF6B7280),
                       ),
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      softWrap: true,
                     ),
                   ],
                 ),
@@ -850,6 +901,614 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildWeatherForecastCard() {
+    if (_isLoadingWeather) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFF10B981)),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.wb_sunny_outlined,
+                  color: Color(0xFF3B82F6),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Weather Forecast',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Current Weather Information
+          if (_currentWeather != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.1), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Current weather header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Current Weather',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          _currentWeather!.cityName,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: const Color(0xFF6B7280),
+                          ),
+                          textAlign: TextAlign.end,
+                          maxLines: 2,
+                          softWrap: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Current weather details
+                  Column(
+                    children: [
+                      // Top row - Temperature and Humidity
+                      Row(
+                        children: [
+                          // Temperature section
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${_currentWeather!.temperature.round()}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFF111827),
+                                        ),
+                                      ),
+                                      Text(
+                                        '°C',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Temperature',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: const Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Humidity section
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '${_currentWeather!.humidity}%',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF3B82F6),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Humidity',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: const Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Bottom row - Climate
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getWeatherIcon(_currentWeather!.description),
+                              size: 18,
+                              color: const Color(0xFF3B82F6),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _currentWeather!.description,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF3B82F6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+          ],
+          
+          // 5-Day Forecast
+          if (_weatherForecast.isNotEmpty) ...[
+            Text(
+              '5-Day Forecast',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _weatherForecast.length,
+                itemBuilder: (context, index) {
+                  final forecast = _weatherForecast[index];
+                  final isToday = index == 0;
+                  
+                  return Container(
+                    width: 70,
+                    margin: EdgeInsets.only(right: index < _weatherForecast.length - 1 ? 16 : 0),
+                    decoration: BoxDecoration(
+                      color: isToday ? const Color(0xFF3B82F6).withOpacity(0.1) : const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: isToday ? Border.all(color: const Color(0xFF3B82F6), width: 1) : null,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isToday ? 'Today' : _formatForecastDate(forecast.date),
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: isToday ? const Color(0xFF3B82F6) : const Color(0xFF6B7280),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Icon(
+                            _getWeatherIcon(forecast.description),
+                            size: 20,
+                            color: isToday ? const Color(0xFF3B82F6) : const Color(0xFF9CA3AF),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${forecast.temperature.round()}°',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isToday ? const Color(0xFF3B82F6) : const Color(0xFF111827),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedSoilStatusCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.science_outlined,
+                  color: Color(0xFF10B981),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Soil Analysis',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSoilParameter('pH Level', '6.5', 'Good', Colors.green),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildSoilParameter('Moisture', '68%', 'Optimal', Colors.blue),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSoilParameter('Nitrogen', 'Medium', 'Fair', Colors.orange),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildSoilParameter('Temperature', '24°C', 'Good', Colors.green),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSoilParameter(String title, String value, String status, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: const Color(0xFF6B7280),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF111827),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            status,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAIRecommendationsSection() {
+    return Container(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'AI Recommendations',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  // Navigate to full recommendations screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true)),
+                  );
+                },
+                child: Text(
+                  'View All',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF10B981),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Rice Recommendation Card
+          _buildCropRecommendationCard(
+            cropName: 'Rice',
+            profit: '₹45,000',
+            yield: '4.2 tons/acre',
+            sustain: '85%',
+            isRecommended: true,
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Wheat Recommendation Card
+          _buildCropRecommendationCard(
+            cropName: 'Wheat',
+            profit: '₹38,000',
+            yield: '3.8 tons/acre',
+            sustain: '78%',
+            isRecommended: true,
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildCropRecommendationCard({
+    required String cropName,
+    required String profit,
+    required String yield,
+    required String sustain,
+    required bool isRecommended,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4), // Light green background
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD1FAE5), width: 1),
+      ),
+      child: Row(
+        children: [
+          // Crop name section
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  cropName,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  profit,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF10B981),
+                  ),
+                ),
+                Text(
+                  'Profit',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Yield section
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  yield,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+                Text(
+                  'Yield',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Sustain section
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sustain,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+                Text(
+                  'Sustain',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Recommended badge
+          if (isRecommended)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                'Recommended',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _formatForecastDate(DateTime date) {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[date.weekday - 1];
+  }
+
+  IconData _getWeatherIcon(String description) {
+    final desc = description.toLowerCase();
+    if (desc.contains('rain')) return Icons.water_drop_outlined;
+    if (desc.contains('cloud')) return Icons.cloud_outlined;
+    if (desc.contains('sun') || desc.contains('clear')) return Icons.wb_sunny_outlined;
+    if (desc.contains('storm')) return Icons.thunderstorm_outlined;
+    if (desc.contains('snow')) return Icons.ac_unit_outlined;
+    return Icons.wb_cloudy_outlined;
+  }
+
   Widget _buildNotificationButton() {
     return Container(
       decoration: BoxDecoration(
@@ -967,7 +1626,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ChatScreen()),
+            MaterialPageRoute(builder: (context) => const ChatScreen(showBottomNav: true)),
           );
         },
         backgroundColor: Colors.transparent,
