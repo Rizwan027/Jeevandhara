@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:jeevandhara/screens/advice/advice_screen.dart';
-import 'package:jeevandhara/screens/chat/chat_screen.dart';
-import 'package:jeevandhara/screens/scan/scan_screen.dart';
-import 'package:jeevandhara/screens/input_data/input_data_screen.dart';
-import 'package:jeevandhara/services/weather_service.dart';
-import 'package:jeevandhara/services/ai_service.dart';
+import '../advice/advice_screen.dart';
+import '../chat/chat_screen.dart';
+import '../scan/scan_screen.dart';
+import '../input_data/input_data_screen.dart';
+import '../../services/weather_service.dart';
+import '../../services/ai_service.dart';
+import '../../localization/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -27,9 +28,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   WeatherData? _currentWeather;
   List<WeatherAlert> _weatherAlerts = [];
   List<WeatherForecast> _weatherForecast = [];
-  String _aiRecommendation = '';
   bool _isLoadingWeather = true;
-  bool _isLoadingAI = true;
 
   @override
   void initState() {
@@ -47,9 +46,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
     _animationController.forward();
     
-    // Load weather data and AI recommendations
+    // Load weather data
     _loadWeatherData();
-    _loadAIRecommendations();
   }
 
   Future<void> _loadWeatherData() async {
@@ -79,39 +77,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _loadAIRecommendations() async {
-    try {
-      String weatherContext = '';
-      if (_currentWeather != null) {
-        weatherContext = 'Current weather: ${_currentWeather!.temperature.round()}°C, ${_currentWeather!.description}, ${_currentWeather!.humidity}% humidity. ';
-      }
-      
-      final recommendation = await _aiService.getAgriculturalAdvice(
-        '${weatherContext}Give me 3 important farming recommendations for today based on current conditions.'
-      );
-      
-      if (mounted) {
-        setState(() {
-          _aiRecommendation = recommendation;
-          _isLoadingAI = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading AI recommendations: $e');
-      if (mounted) {
-        setState(() {
-          _aiRecommendation = '''🌾 Today's Farming Tips:
-
-• Check soil moisture levels - water if dry
-• Monitor crops for pest activity 
-• Apply organic fertilizer if needed
-
-💡 Use our AI chat for personalized advice!''';
-          _isLoadingAI = false;
-        });
-      }
-    }
-  }
 
   @override
   void dispose() {
@@ -185,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Good ${_getTimeOfDay()}!',
+                              _getTimeOfDay(context),
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 color: const Color(0xFF6B7280),
@@ -194,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Hello Farmer',
+                              AppLocalizations.of(context)!.getText('hello_farmer'),
                               style: GoogleFonts.inter(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,
@@ -250,28 +215,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Today's Alerts Section
-                    _buildSectionTitle('Today\'s Alerts'),
+                    _buildSectionTitle(AppLocalizations.of(context)!.getText('todays_alerts')),
                     const SizedBox(height: 16),
                     _buildAlertCards(),
                     
                     const SizedBox(height: 32),
                     
                     // Soil Status Section
-                    _buildSectionTitle('Soil Status'),
+                    _buildSectionTitle(AppLocalizations.of(context)!.getText('soil_status')),
                     const SizedBox(height: 16),
                     _buildEnhancedSoilStatusCard(),
                     
                     const SizedBox(height: 32),
                     
                     // Weather Forecast Section
-                    _buildSectionTitle('Weather Forecast'),
+                    _buildSectionTitle(AppLocalizations.of(context)!.getText('weather_forecast')),
                     const SizedBox(height: 16),
                     _buildWeatherForecastCard(),
                     
                     const SizedBox(height: 32),
                     
-                    // AI Recommendations Section
-                    _buildAIRecommendationsSection(),
+                    // Live Market Prices Section  
+                    _buildSectionTitle(AppLocalizations.of(context)!.getText('live_market_prices')),
+                    const SizedBox(height: 16),
+                    _buildLiveMarketPrices(),
                     
                     const SizedBox(height: 20), // Bottom padding
                   ],
@@ -294,26 +261,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         selectedFontSize: 12,
         unselectedFontSize: 10,
         iconSize: 22,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            label: AppLocalizations.of(context)!.getText('home'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner_outlined),
-            label: 'Scan',
+            icon: const Icon(Icons.qr_code_scanner_outlined),
+            label: AppLocalizations.of(context)!.getText('scan'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chat',
+            icon: const Icon(Icons.chat_bubble_outline),
+            label: AppLocalizations.of(context)!.getText('chat'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.lightbulb_outline),
-            label: 'Advice',
+            icon: const Icon(Icons.lightbulb_outline),
+            label: AppLocalizations.of(context)!.getText('advice'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            label: AppLocalizations.of(context)!.getText('profile'),
           ),
         ],
       ) : null,
@@ -321,11 +288,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   // Helper method for time-based greeting
-  String _getTimeOfDay() {
+  String _getTimeOfDay(BuildContext context) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Morning';
-    if (hour < 17) return 'Afternoon';
-    return 'Evening';
+    if (hour < 12) return AppLocalizations.of(context)!.getText('good_morning');
+    if (hour < 17) return AppLocalizations.of(context)!.getText('good_afternoon');
+    return AppLocalizations.of(context)!.getText('good_evening');
   }
 
   Widget _buildQuickActions() {
@@ -333,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       children: [
         Expanded(
           child: _buildQuickActionCard(
-            'Crop\nAdvice',
+            AppLocalizations.of(context)!.getText('crop_advice'),
             Icons.eco_outlined,
             const Color(0xFF10B981),
             () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true))),
@@ -342,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         const SizedBox(width: 16),
         Expanded(
           child: _buildQuickActionCard(
-            'Add\nData',
+            AppLocalizations.of(context)!.getText('add_data'),
             Icons.add_circle_outline,
             const Color(0xFF3B82F6),
             () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InputDataScreen())),
@@ -426,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             Expanded(
               child: _buildInsightCard(
-                'Crop Health',
+                AppLocalizations.of(context)!.getText('crop_health'),
                 '92%',
                 '+2.3% from last week',
                 Icons.eco_outlined,
@@ -437,9 +404,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(width: 16),
             Expanded(
               child: _buildInsightCard(
-                'Yield Est.',
+                AppLocalizations.of(context)!.getText('yield_est'),
                 '847 kg',
-                'Expected this season',
+                AppLocalizations.of(context)!.getText('expected_this_season'),
                 Icons.trending_up_outlined,
                 const Color(0xFF3B82F6),
                 false,
@@ -540,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       textAlign: TextAlign.right,
                     ),
                     Text(
-                      'Humidity',
+                      AppLocalizations.of(context)!.getText('humidity'),
                       style: GoogleFonts.inter(
                         fontSize: 9,
                         color: const Color(0xFF9CA3AF),
@@ -642,8 +609,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     // Add market alert as fallback or additional info
     alertWidgets.add(_buildAlertCard(
-      'Rice prices increased in market',
-      'Rice prices have increased by 8% in the local market.',
+      AppLocalizations.of(context)!.getText('rice_price_alert'),
+      AppLocalizations.of(context)!.getText('rice_price_desc'),
       Icons.trending_up_outlined,
       const Color(0xFFF59E0B),
     ));
@@ -727,7 +694,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'URGENT',
+                          AppLocalizations.of(context)!.getText('urgent'),
                           style: GoogleFonts.inter(
                             fontSize: 8,
                             fontWeight: FontWeight.w600,
@@ -858,7 +825,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'pH Level: 6.5',
+                        AppLocalizations.of(context)!.getText('ph_level'),
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -866,7 +833,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       Text(
-                        'Optimal for most crops',
+                        AppLocalizations.of(context)!.getText('optimal_crops'),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           color: const Color(0xFF6B7280),
@@ -951,7 +918,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 12),
               Text(
-                'Weather Forecast',
+                AppLocalizations.of(context)!.getText('weather_forecast'),
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -980,7 +947,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Current Weather',
+                        AppLocalizations.of(context)!.getText('current_weather'),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -1043,7 +1010,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Temperature',
+                                  AppLocalizations.of(context)!.getText('temperature'),
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: const Color(0xFF6B7280),
@@ -1073,7 +1040,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Humidity',
+                                  AppLocalizations.of(context)!.getText('humidity'),
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: const Color(0xFF6B7280),
@@ -1129,7 +1096,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // 5-Day Forecast
           if (_weatherForecast.isNotEmpty) ...[
             Text(
-              '5-Day Forecast',
+              AppLocalizations.of(context)!.getText('five_day_forecast'),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -1160,7 +1127,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            isToday ? 'Today' : _formatForecastDate(forecast.date),
+                            isToday ? AppLocalizations.of(context)!.getText('today') : _formatForecastDate(forecast.date),
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
@@ -1230,7 +1197,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 12),
               Text(
-                'Soil Analysis',
+                AppLocalizations.of(context)!.getText('soil_analysis'),
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -1243,11 +1210,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Row(
             children: [
               Expanded(
-                child: _buildSoilParameter('pH Level', '6.5', 'Good', Colors.green),
+                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('ph_level_short'), '6.5', AppLocalizations.of(context)!.getText('good'), Colors.green),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildSoilParameter('Moisture', '68%', 'Optimal', Colors.blue),
+                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('moisture'), '68%', AppLocalizations.of(context)!.getText('optimal'), Colors.blue),
               ),
             ],
           ),
@@ -1255,11 +1222,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Row(
             children: [
               Expanded(
-                child: _buildSoilParameter('Nitrogen', 'Medium', 'Fair', Colors.orange),
+                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('nitrogen'), AppLocalizations.of(context)!.getText('medium'), AppLocalizations.of(context)!.getText('fair'), Colors.orange),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildSoilParameter('Temperature', '24°C', 'Good', Colors.green),
+                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('temperature'), '24°C', AppLocalizations.of(context)!.getText('good'), Colors.green),
               ),
             ],
           ),
@@ -1310,19 +1277,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAIRecommendationsSection() {
+  Widget _buildMarketTrendsSection() {
     return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.trending_up,
+                  color: Color(0xFF059669),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
-                'AI Recommendations',
+                'Market Trends',
                 style: GoogleFonts.inter(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF111827),
                 ),
@@ -1380,7 +1372,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required bool isRecommended,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF0FDF4), // Light green background
         borderRadius: BorderRadius.circular(12),
@@ -1705,4 +1697,189 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
+  Widget _buildLiveMarketPrices() {
+    final marketData = [
+      {'crop': 'Wheat', 'price': '₹2,180', 'change': '+2.5%', 'color': Colors.green, 'icon': Icons.trending_up},
+      {'crop': 'Rice', 'price': '₹2,850', 'change': '+5.2%', 'color': Colors.green, 'icon': Icons.trending_up},
+      {'crop': 'Mustard', 'price': '₹5,420', 'change': '-1.8%', 'color': Colors.red, 'icon': Icons.trending_down},
+      {'crop': 'Cotton', 'price': '₹6,240', 'change': '0.0%', 'color': Colors.grey, 'icon': Icons.trending_flat},
+      {'crop': 'Gram', 'price': '₹5,180', 'change': '+3.1%', 'color': Colors.green, 'icon': Icons.trending_up},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.show_chart, color: Color(0xFF059669), size: 16),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                AppLocalizations.of(context)!.getText('live_market_prices'),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF059669),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      AppLocalizations.of(context)!.getText('live'),
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF059669),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: marketData.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        item['crop'] as String,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111827),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        '${item['price']}/qtl',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            item['icon'] as IconData,
+                            size: 11,
+                            color: item['color'] as Color,
+                          ),
+                          const SizedBox(width: 3),
+                          Flexible(
+                            child: Text(
+                              item['change'] as String,
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: item['color'] as Color,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )).toList(),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true)),
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF059669),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.insights, color: Colors.white, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context)!.getText('view_detailed_analysis'),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 }

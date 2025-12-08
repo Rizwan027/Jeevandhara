@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import 'package:jeevandhara/screens/advice/advice_screen.dart';
-import 'package:jeevandhara/screens/home/home_screen.dart';
-import 'package:jeevandhara/services/ai_service.dart';
+import '../advice/advice_screen.dart';
+import '../home/home_screen.dart';
+import '../../services/ai_service.dart';
 
 class ScanScreen extends StatefulWidget {
   final bool showBottomNav;

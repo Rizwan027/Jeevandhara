@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'localization/app_localizations.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/home/home_screen.dart';
 import 'widgets/main_navigation.dart';
 
 void main() {
@@ -51,6 +50,7 @@ class MyAppState extends State<MyApp> {
         Locale('te', ''), // Telugu
         Locale('ta', ''), // Tamil
         Locale('bn', ''), // Bengali
+        Locale('mr', ''), // Marathi
       ],
       home: const LanguageSelectionScreen(),
       routes: {
@@ -60,7 +60,6 @@ class MyAppState extends State<MyApp> {
     );
   }
 }
-
 
 class LanguageSelectionScreen extends StatelessWidget {
   const LanguageSelectionScreen({super.key});
@@ -75,19 +74,20 @@ class LanguageSelectionScreen extends StatelessWidget {
         return const Locale('ta', '');
       case 'Bengali':
         return const Locale('bn', '');
+      case 'Marathi':
+        return const Locale('mr', '');
       case 'English':
       default:
         return const Locale('en', '');
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final List<Map<String, String>> languages = [
       {'name': 'English', 'nativeName': 'English'},
       {'name': 'Hindi', 'nativeName': 'हिंदी'},
+      {'name': 'Marathi', 'nativeName': 'मराठी'},
       {'name': 'Telugu', 'nativeName': 'తెలుగు'},
       {'name': 'Tamil', 'nativeName': 'தமிழ்'},
       {'name': 'Bengali', 'nativeName': 'বাংলা'},
@@ -98,12 +98,13 @@ class LanguageSelectionScreen extends StatelessWidget {
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight,
-              ),
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 16.0,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -113,17 +114,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                         width: 150, // Adjust size as needed
                         height: 150, // Adjust size as needed
                       ),
-                      const SizedBox(height: 16),
-                      // App Name
-                      const Text(
-                        'SmartAgri Advisor',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2E7D32),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 24),
                       // Subtitle
                       const Text(
                         'Select your preferred language',
@@ -168,15 +159,21 @@ class LanguageSelectionScreen extends StatelessWidget {
                                 vertical: 10,
                               ),
                               title: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
                                 child: Text(
                                   languages[index]['nativeName']!,
                                   style: TextStyle(
-                                    fontSize: languages[index]['name'] == 'Bengali' ? 14 : 16,
+                                    fontSize:
+                                        languages[index]['name'] == 'Bengali'
+                                        ? 14
+                                        : 16,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black87,
-                                    fontFamily: languages[index]['name'] == 'Bengali' 
-                                        ? 'Roboto' 
+                                    fontFamily:
+                                        languages[index]['name'] == 'Bengali'
+                                        ? 'Roboto'
                                         : null,
                                     height: 1.2,
                                   ),
@@ -197,42 +194,22 @@ class LanguageSelectionScreen extends StatelessWidget {
                                 color: Color(0xFF4CAF50),
                               ),
                               onTap: () {
-                                final newLocale = _getLocale(languages[index]['name']!);
+                                final newLocale = _getLocale(
+                                  languages[index]['name']!,
+                                );
                                 MyApp.of(context).setLocale(newLocale);
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => OnboardingScreen(
-                                      selectedLanguage: languages[index]['name']!,
+                                      selectedLanguage:
+                                          languages[index]['name']!,
                                     ),
                                   ),
                                 );
                               },
                             );
                           },
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Voice Tutorial
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.volume_up,
-                              color: Color(0xFF4CAF50),
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Voice Tutorial Available',
-                              style: TextStyle(
-                                color: Color(0xFF2E7D32),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
                     ],

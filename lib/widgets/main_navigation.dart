@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:jeevandhara/screens/home/home_screen.dart';
-import 'package:jeevandhara/screens/scan/scan_screen.dart';
-import 'package:jeevandhara/screens/chat/chat_screen.dart';
-import 'package:jeevandhara/screens/advice/advice_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/scan/scan_screen.dart';
+import '../screens/chat/chat_screen.dart';
+import '../screens/advice/advice_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   final int initialIndex;
