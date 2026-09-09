@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'localization/app_localizations.dart';
+import 'screens/auth_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'widgets/main_navigation.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -52,10 +57,32 @@ class MyAppState extends State<MyApp> {
         Locale('bn', ''), // Bengali
         Locale('mr', ''), // Marathi
       ],
-      home: const LanguageSelectionScreen(),
+      home: const AuthGate(),
       routes: {
         '/home': (context) => const MainNavigation(),
         '/main': (context) => const MainNavigation(),
+      },
+    );
+  }
+
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return snapshot.hasData
+            ? const LanguageSelectionScreen()
+            : const AuthScreen();
       },
     );
   }

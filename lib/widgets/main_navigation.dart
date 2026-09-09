@@ -3,6 +3,7 @@ import '../screens/home/home_screen.dart';
 import '../screens/scan/scan_screen.dart';
 import '../screens/chat/chat_screen.dart';
 import '../screens/advice/advice_screen.dart';
+import '../screens/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   final int initialIndex;
@@ -59,7 +60,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ScanScreenContent(),
           ChatScreenContent(),
           AdviceScreenContent(),
-          ProfileScreenPlaceholder(),
+          ProfileScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -141,52 +142,5 @@ class AdviceScreenContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AdviceScreen(showBottomNav: false);
-  }
-}
-
-class ProfileScreenPlaceholder extends StatelessWidget {
-  const ProfileScreenPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FFFE),
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: const Color(0xFF2E7D32),
-        automaticallyImplyLeading: false,
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_outline,
-              size: 80,
-              color: Color(0xFF4CAF50),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Profile Screen',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1B5E20),
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Coming Soon...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

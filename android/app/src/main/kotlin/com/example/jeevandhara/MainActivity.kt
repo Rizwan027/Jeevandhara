@@ -1,4 +1,4 @@
-package com.example.jeevandhara
+package com.miniproject.jeevandhara
 
 import io.flutter.embedding.android.FlutterActivity
 

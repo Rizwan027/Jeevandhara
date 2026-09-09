@@ -16,7 +16,8 @@ class CropRecommendationScreen extends StatefulWidget {
   });
 
   @override
-  State<CropRecommendationScreen> createState() => _CropRecommendationScreenState();
+  State<CropRecommendationScreen> createState() =>
+      _CropRecommendationScreenState();
 }
 
 class _CropRecommendationScreenState extends State<CropRecommendationScreen>
@@ -32,20 +33,16 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
   }
@@ -77,7 +74,11 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
                 ),
               ],
             ),
-            child: const Icon(Icons.arrow_back, color: Color(0xFF10B981), size: 20),
+            child: const Icon(
+              Icons.arrow_back,
+              color: Color(0xFF10B981),
+              size: 20,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -171,11 +172,7 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
               color: const Color(0xFF3B82F6),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.agriculture,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: const Icon(Icons.agriculture, color: Colors.white, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -218,8 +215,8 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
             widget.recommendations.soilSuitability.overallScore >= 75
                 ? 'Excellent'
                 : widget.recommendations.soilSuitability.overallScore >= 50
-                    ? 'Good'
-                    : 'Needs Work',
+                ? 'Good'
+                : 'Needs Work',
           ),
         ),
         const SizedBox(width: 12),
@@ -232,15 +229,21 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
             widget.recommendations.weatherSuitability.score >= 75
                 ? 'Ideal'
                 : widget.recommendations.weatherSuitability.score >= 50
-                    ? 'Suitable'
-                    : 'Challenging',
+                ? 'Suitable'
+                : 'Challenging',
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color, String status) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    String status,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -338,7 +341,9 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
             ],
           ),
           const SizedBox(height: 16),
-          ...widget.recommendations.recommendedCrops.map((crop) => _buildCropCard(crop)).toList(),
+          ...widget.recommendations.recommendedCrops.map(
+            (crop) => _buildCropCard(crop),
+          ),
         ],
       ),
     );
@@ -353,7 +358,7 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
         color: const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: index == 0 
+          color: index == 0
               ? const Color(0xFF10B981).withOpacity(0.3)
               : const Color(0xFFE5E7EB),
         ),
@@ -363,15 +368,12 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: index == 0 
+              color: index == 0
                   ? const Color(0xFF10B981)
                   : const Color(0xFF6B7280),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              crop.icon,
-              style: const TextStyle(fontSize: 16),
-            ),
+            child: Text(crop.icon, style: const TextStyle(fontSize: 16)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -390,9 +392,14 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: _getProfitabilityColor(crop.profitability).withOpacity(0.1),
+                        color: _getProfitabilityColor(
+                          crop.profitability,
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -456,7 +463,7 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
             ),
           ),
           const SizedBox(height: 16),
-          
+
           _buildGuidelineSection(
             'Fertilization Plan',
             widget.recommendations.fertilizationPlan,
@@ -464,7 +471,7 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
             const Color(0xFF10B981),
           ),
           const SizedBox(height: 12),
-          
+
           _buildGuidelineSection(
             'Irrigation Schedule',
             widget.recommendations.irrigationSchedule,
@@ -472,7 +479,7 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
             const Color(0xFF3B82F6),
           ),
           const SizedBox(height: 12),
-          
+
           _buildGuidelineSection(
             'Market Insights',
             widget.recommendations.marketInsights,
@@ -484,7 +491,12 @@ class _CropRecommendationScreenState extends State<CropRecommendationScreen>
     );
   }
 
-  Widget _buildGuidelineSection(String title, String content, IconData icon, Color color) {
+  Widget _buildGuidelineSection(
+    String title,
+    String content,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

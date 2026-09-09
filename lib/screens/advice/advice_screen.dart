@@ -74,11 +74,13 @@ class _AdviceScreenState extends State<AdviceScreen> with TickerProviderStateMix
       // Generate recommendations
       recommendedCrops = _generateCropRecommendations();
       
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
       _animationController.forward();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });

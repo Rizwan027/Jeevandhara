@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../advice/advice_screen.dart';
 import '../chat/chat_screen.dart';
 import '../scan/scan_screen.dart';
@@ -11,7 +10,7 @@ import '../../localization/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showBottomNav;
-  
+
   const HomeScreen({super.key, this.showBottomNav = true});
 
   @override
@@ -23,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _animation;
   late WeatherService _weatherService;
   late AIService _aiService;
-  
+
   int _currentIndex = 0;
   WeatherData? _currentWeather;
   List<WeatherAlert> _weatherAlerts = [];
@@ -35,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _weatherService = WeatherService();
     _aiService = AIService();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -45,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       curve: Curves.easeIn,
     );
     _animationController.forward();
-    
+
     // Load weather data
     _loadWeatherData();
   }
@@ -54,10 +53,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       final weather = await _weatherService.getCurrentWeather();
       final forecast = await _weatherService.getWeatherForecast();
-      
+
       if (weather != null) {
         final alerts = _weatherService.generateFarmingAlerts(weather, forecast);
-        
+
         if (mounted) {
           setState(() {
             _currentWeather = weather;
@@ -76,7 +75,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     }
   }
-
 
   @override
   void dispose() {
@@ -97,19 +95,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       // Scan tab
       navigation = Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const ScanScreen(showBottomNav: true)),
+        MaterialPageRoute(
+          builder: (context) => const ScanScreen(showBottomNav: true),
+        ),
       );
     } else if (index == 2) {
       // Chat tab
       navigation = Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const ChatScreen(showBottomNav: true)),
+        MaterialPageRoute(
+          builder: (context) => const ChatScreen(showBottomNav: true),
+        ),
       );
     } else if (index == 3) {
       // Advice tab
       navigation = Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true)),
+        MaterialPageRoute(
+          builder: (context) => const AdviceScreen(showBottomNav: true),
+        ),
       );
     } else if (index == 4) {
       // Profile tab - TODO: implement profile screen
@@ -159,7 +163,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              AppLocalizations.of(context)!.getText('hello_farmer'),
+                              AppLocalizations.of(
+                                context,
+                              )!.getText('hello_farmer'),
                               style: GoogleFonts.inter(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,
@@ -207,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ],
                 ),
               ),
-              
+
               // Main Content Cards
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -215,31 +221,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Today's Alerts Section
-                    _buildSectionTitle(AppLocalizations.of(context)!.getText('todays_alerts')),
+                    _buildSectionTitle(
+                      AppLocalizations.of(context)!.getText('todays_alerts'),
+                    ),
                     const SizedBox(height: 16),
                     _buildAlertCards(),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Soil Status Section
-                    _buildSectionTitle(AppLocalizations.of(context)!.getText('soil_status')),
+                    _buildSectionTitle(
+                      AppLocalizations.of(context)!.getText('soil_status'),
+                    ),
                     const SizedBox(height: 16),
                     _buildEnhancedSoilStatusCard(),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Weather Forecast Section
-                    _buildSectionTitle(AppLocalizations.of(context)!.getText('weather_forecast')),
+                    _buildSectionTitle(
+                      AppLocalizations.of(context)!.getText('weather_forecast'),
+                    ),
                     const SizedBox(height: 16),
                     _buildWeatherForecastCard(),
-                    
+
                     const SizedBox(height: 32),
-                    
-                    // Live Market Prices Section  
-                    _buildSectionTitle(AppLocalizations.of(context)!.getText('live_market_prices')),
+
+                    // Live Market Prices Section
+                    _buildSectionTitle(
+                      AppLocalizations.of(
+                        context,
+                      )!.getText('live_market_prices'),
+                    ),
                     const SizedBox(height: 16),
                     _buildLiveMarketPrices(),
-                    
+
                     const SizedBox(height: 20), // Bottom padding
                   ],
                 ),
@@ -248,42 +264,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
       ),
-      bottomNavigationBar: widget.showBottomNav ? BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF10B981),
-        unselectedItemColor: const Color(0xFF9CA3AF),
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        elevation: 8,
-        backgroundColor: Colors.white,
-        selectedFontSize: 12,
-        unselectedFontSize: 10,
-        iconSize: 22,
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_outlined),
-            label: AppLocalizations.of(context)!.getText('home'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.qr_code_scanner_outlined),
-            label: AppLocalizations.of(context)!.getText('scan'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.chat_bubble_outline),
-            label: AppLocalizations.of(context)!.getText('chat'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.lightbulb_outline),
-            label: AppLocalizations.of(context)!.getText('advice'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outline),
-            label: AppLocalizations.of(context)!.getText('profile'),
-          ),
-        ],
-      ) : null,
+      bottomNavigationBar: widget.showBottomNav
+          ? BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: _onItemTapped,
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: const Color(0xFF10B981),
+              unselectedItemColor: const Color(0xFF9CA3AF),
+              showSelectedLabels: true,
+              showUnselectedLabels: true,
+              elevation: 8,
+              backgroundColor: Colors.white,
+              selectedFontSize: 12,
+              unselectedFontSize: 10,
+              iconSize: 22,
+              items: [
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.home_outlined),
+                  label: AppLocalizations.of(context)!.getText('home'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.qr_code_scanner_outlined),
+                  label: AppLocalizations.of(context)!.getText('scan'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: AppLocalizations.of(context)!.getText('chat'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.lightbulb_outline),
+                  label: AppLocalizations.of(context)!.getText('advice'),
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.person_outline),
+                  label: AppLocalizations.of(context)!.getText('profile'),
+                ),
+              ],
+            )
+          : null,
     );
   }
 
@@ -291,7 +309,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _getTimeOfDay(BuildContext context) {
     final hour = DateTime.now().hour;
     if (hour < 12) return AppLocalizations.of(context)!.getText('good_morning');
-    if (hour < 17) return AppLocalizations.of(context)!.getText('good_afternoon');
+    if (hour < 17)
+      return AppLocalizations.of(context)!.getText('good_afternoon');
     return AppLocalizations.of(context)!.getText('good_evening');
   }
 
@@ -303,7 +322,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             AppLocalizations.of(context)!.getText('crop_advice'),
             Icons.eco_outlined,
             const Color(0xFF10B981),
-            () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true))),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdviceScreen(showBottomNav: true),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 16),
@@ -312,14 +336,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             AppLocalizations.of(context)!.getText('add_data'),
             Icons.add_circle_outline,
             const Color(0xFF3B82F6),
-            () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InputDataScreen())),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const InputDataScreen()),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickActionCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -347,11 +379,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(height: 16),
             Text(
@@ -524,7 +552,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildInsightCard(String title, String value, String subtitle, IconData icon, Color color, bool showTrend) {
+  Widget _buildInsightCard(
+    String title,
+    String value,
+    String subtitle,
+    IconData icon,
+    Color color,
+    bool showTrend,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -555,7 +590,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Icon(icon, color: color, size: 20),
               ),
               if (showTrend)
-                Icon(Icons.trending_up, color: const Color(0xFF10B981), size: 16),
+                Icon(
+                  Icons.trending_up,
+                  color: const Color(0xFF10B981),
+                  size: 16,
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -581,7 +620,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: showTrend ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+              color: showTrend
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFF9CA3AF),
             ),
           ),
         ],
@@ -608,12 +649,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     // Add market alert as fallback or additional info
-    alertWidgets.add(_buildAlertCard(
-      AppLocalizations.of(context)!.getText('rice_price_alert'),
-      AppLocalizations.of(context)!.getText('rice_price_desc'),
-      Icons.trending_up_outlined,
-      const Color(0xFFF59E0B),
-    ));
+    alertWidgets.add(
+      _buildAlertCard(
+        AppLocalizations.of(context)!.getText('rice_price_alert'),
+        AppLocalizations.of(context)!.getText('rice_price_desc'),
+        Icons.trending_up_outlined,
+        const Color(0xFFF59E0B),
+      ),
+    );
 
     return Column(children: alertWidgets);
   }
@@ -643,8 +686,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: alertColor.withOpacity(0.2), 
-          width: alert.severity == AlertSeverity.urgent ? 2 : 1
+          color: alertColor.withOpacity(0.2),
+          width: alert.severity == AlertSeverity.urgent ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -664,10 +707,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: Text(
-                alert.icon,
-                style: const TextStyle(fontSize: 20),
-              ),
+              child: Text(alert.icon, style: const TextStyle(fontSize: 20)),
             ),
           ),
           const SizedBox(width: 16),
@@ -688,7 +728,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     if (alert.severity == AlertSeverity.urgent) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFDC2626).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -718,17 +761,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           if (alert.actionRequired)
-            Icon(
-              Icons.chevron_right,
-              color: alertColor,
-              size: 20,
-            ),
+            Icon(Icons.chevron_right, color: alertColor, size: 20),
         ],
       ),
     );
   }
 
-  Widget _buildAlertCard(String title, String subtitle, IconData icon, Color color) {
+  Widget _buildAlertCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -927,9 +971,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Current Weather Information
           if (_currentWeather != null) ...[
             Container(
@@ -937,7 +981,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: const Color(0xFF3B82F6).withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.1), width: 1),
+                border: Border.all(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  width: 1,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -947,7 +994,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        AppLocalizations.of(context)!.getText('current_weather'),
+                        AppLocalizations.of(
+                          context,
+                        )!.getText('current_weather'),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -968,9 +1017,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Current weather details
                   Column(
                     children: [
@@ -987,7 +1036,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   fit: BoxFit.scaleDown,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '${_currentWeather!.temperature.round()}',
@@ -1010,7 +1060,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  AppLocalizations.of(context)!.getText('temperature'),
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.getText('temperature'),
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: const Color(0xFF6B7280),
@@ -1020,7 +1072,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                          
+
                           // Humidity section
                           Expanded(
                             flex: 1,
@@ -1040,7 +1092,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  AppLocalizations.of(context)!.getText('humidity'),
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.getText('humidity'),
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: const Color(0xFF6B7280),
@@ -1052,16 +1106,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Bottom row - Climate
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF3B82F6).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2)),
+                          border: Border.all(
+                            color: const Color(0xFF3B82F6).withOpacity(0.2),
+                          ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1089,10 +1148,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
           ],
-          
+
           // 5-Day Forecast
           if (_weatherForecast.isNotEmpty) ...[
             Text(
@@ -1112,14 +1171,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 itemBuilder: (context, index) {
                   final forecast = _weatherForecast[index];
                   final isToday = index == 0;
-                  
+
                   return Container(
                     width: 70,
-                    margin: EdgeInsets.only(right: index < _weatherForecast.length - 1 ? 16 : 0),
+                    margin: EdgeInsets.only(
+                      right: index < _weatherForecast.length - 1 ? 16 : 0,
+                    ),
                     decoration: BoxDecoration(
-                      color: isToday ? const Color(0xFF3B82F6).withOpacity(0.1) : const Color(0xFFF9FAFB),
+                      color: isToday
+                          ? const Color(0xFF3B82F6).withOpacity(0.1)
+                          : const Color(0xFFF9FAFB),
                       borderRadius: BorderRadius.circular(12),
-                      border: isToday ? Border.all(color: const Color(0xFF3B82F6), width: 1) : null,
+                      border: isToday
+                          ? Border.all(color: const Color(0xFF3B82F6), width: 1)
+                          : null,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(8),
@@ -1127,18 +1192,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            isToday ? AppLocalizations.of(context)!.getText('today') : _formatForecastDate(forecast.date),
+                            isToday
+                                ? AppLocalizations.of(context)!.getText('today')
+                                : _formatForecastDate(forecast.date),
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
-                              color: isToday ? const Color(0xFF3B82F6) : const Color(0xFF6B7280),
+                              color: isToday
+                                  ? const Color(0xFF3B82F6)
+                                  : const Color(0xFF6B7280),
                             ),
                           ),
                           const SizedBox(height: 6),
                           Icon(
                             _getWeatherIcon(forecast.description),
                             size: 20,
-                            color: isToday ? const Color(0xFF3B82F6) : const Color(0xFF9CA3AF),
+                            color: isToday
+                                ? const Color(0xFF3B82F6)
+                                : const Color(0xFF9CA3AF),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -1146,7 +1217,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isToday ? const Color(0xFF3B82F6) : const Color(0xFF111827),
+                              color: isToday
+                                  ? const Color(0xFF3B82F6)
+                                  : const Color(0xFF111827),
                             ),
                           ),
                         ],
@@ -1210,11 +1283,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Row(
             children: [
               Expanded(
-                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('ph_level_short'), '6.5', AppLocalizations.of(context)!.getText('good'), Colors.green),
+                child: _buildSoilParameter(
+                  AppLocalizations.of(context)!.getText('ph_level_short'),
+                  '6.5',
+                  AppLocalizations.of(context)!.getText('good'),
+                  Colors.green,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('moisture'), '68%', AppLocalizations.of(context)!.getText('optimal'), Colors.blue),
+                child: _buildSoilParameter(
+                  AppLocalizations.of(context)!.getText('moisture'),
+                  '68%',
+                  AppLocalizations.of(context)!.getText('optimal'),
+                  Colors.blue,
+                ),
               ),
             ],
           ),
@@ -1222,11 +1305,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Row(
             children: [
               Expanded(
-                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('nitrogen'), AppLocalizations.of(context)!.getText('medium'), AppLocalizations.of(context)!.getText('fair'), Colors.orange),
+                child: _buildSoilParameter(
+                  AppLocalizations.of(context)!.getText('nitrogen'),
+                  AppLocalizations.of(context)!.getText('medium'),
+                  AppLocalizations.of(context)!.getText('fair'),
+                  Colors.orange,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildSoilParameter(AppLocalizations.of(context)!.getText('temperature'), '24°C', AppLocalizations.of(context)!.getText('good'), Colors.green),
+                child: _buildSoilParameter(
+                  AppLocalizations.of(context)!.getText('temperature'),
+                  '24°C',
+                  AppLocalizations.of(context)!.getText('good'),
+                  Colors.green,
+                ),
               ),
             ],
           ),
@@ -1235,7 +1328,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSoilParameter(String title, String value, String status, Color color) {
+  Widget _buildSoilParameter(
+    String title,
+    String value,
+    String status,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1324,7 +1422,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   // Navigate to full recommendations screen
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true)),
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const AdviceScreen(showBottomNav: true),
+                    ),
                   );
                 },
                 child: Text(
@@ -1339,7 +1440,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Rice Recommendation Card
           _buildCropRecommendationCard(
             cropName: 'Rice',
@@ -1348,9 +1449,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             sustain: '85%',
             isRecommended: true,
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Wheat Recommendation Card
           _buildCropRecommendationCard(
             cropName: 'Wheat',
@@ -1363,7 +1464,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-  
+
   Widget _buildCropRecommendationCard({
     required String cropName,
     required String profit,
@@ -1413,7 +1514,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-          
+
           // Yield section
           Expanded(
             flex: 2,
@@ -1438,7 +1539,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-          
+
           // Sustain section
           Expanded(
             flex: 2,
@@ -1463,7 +1564,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-          
+
           // Recommended badge
           if (isRecommended)
             Container(
@@ -1495,7 +1596,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final desc = description.toLowerCase();
     if (desc.contains('rain')) return Icons.water_drop_outlined;
     if (desc.contains('cloud')) return Icons.cloud_outlined;
-    if (desc.contains('sun') || desc.contains('clear')) return Icons.wb_sunny_outlined;
+    if (desc.contains('sun') || desc.contains('clear'))
+      return Icons.wb_sunny_outlined;
     if (desc.contains('storm')) return Icons.thunderstorm_outlined;
     if (desc.contains('snow')) return Icons.ac_unit_outlined;
     return Icons.wb_cloudy_outlined;
@@ -1557,16 +1659,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           width: 44,
           height: 44,
           color: const Color(0xFF4CAF50),
-          child: const Icon(
-            Icons.person,
-            color: Colors.white,
-            size: 24,
-          ),
+          child: const Icon(Icons.person, color: Colors.white, size: 24),
         ),
       ),
     );
   }
-
 
   Widget _buildSectionHeader(String title, String actionText) {
     return Row(
@@ -1597,8 +1694,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-
-
   Widget _buildFloatingActionButton() {
     return Container(
       width: 56,
@@ -1618,7 +1713,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ChatScreen(showBottomNav: true)),
+            MaterialPageRoute(
+              builder: (context) => const ChatScreen(showBottomNav: true),
+            ),
           );
         },
         backgroundColor: Colors.transparent,
@@ -1670,7 +1767,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index, bool isSelected) {
+  Widget _buildNavItem(
+    IconData icon,
+    String label,
+    int index,
+    bool isSelected,
+  ) {
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       child: Container(
@@ -1680,7 +1782,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+              color: isSelected
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFF9CA3AF),
               size: 20,
             ),
             const SizedBox(height: 2),
@@ -1689,7 +1793,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+                color: isSelected
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFF9CA3AF),
               ),
             ),
           ],
@@ -1700,11 +1806,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildLiveMarketPrices() {
     final marketData = [
-      {'crop': 'Wheat', 'price': '₹2,180', 'change': '+2.5%', 'color': Colors.green, 'icon': Icons.trending_up},
-      {'crop': 'Rice', 'price': '₹2,850', 'change': '+5.2%', 'color': Colors.green, 'icon': Icons.trending_up},
-      {'crop': 'Mustard', 'price': '₹5,420', 'change': '-1.8%', 'color': Colors.red, 'icon': Icons.trending_down},
-      {'crop': 'Cotton', 'price': '₹6,240', 'change': '0.0%', 'color': Colors.grey, 'icon': Icons.trending_flat},
-      {'crop': 'Gram', 'price': '₹5,180', 'change': '+3.1%', 'color': Colors.green, 'icon': Icons.trending_up},
+      {
+        'crop': 'Wheat',
+        'price': '₹2,180',
+        'change': '+2.5%',
+        'color': Colors.green,
+        'icon': Icons.trending_up,
+      },
+      {
+        'crop': 'Rice',
+        'price': '₹2,850',
+        'change': '+5.2%',
+        'color': Colors.green,
+        'icon': Icons.trending_up,
+      },
+      {
+        'crop': 'Mustard',
+        'price': '₹5,420',
+        'change': '-1.8%',
+        'color': Colors.red,
+        'icon': Icons.trending_down,
+      },
+      {
+        'crop': 'Cotton',
+        'price': '₹6,240',
+        'change': '0.0%',
+        'color': Colors.grey,
+        'icon': Icons.trending_flat,
+      },
+      {
+        'crop': 'Gram',
+        'price': '₹5,180',
+        'change': '+3.1%',
+        'color': Colors.green,
+        'icon': Icons.trending_up,
+      },
     ];
 
     return Container(
@@ -1733,7 +1869,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: const Color(0xFF059669).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.show_chart, color: Color(0xFF059669), size: 16),
+                child: const Icon(
+                  Icons.show_chart,
+                  color: Color(0xFF059669),
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
@@ -1778,79 +1918,85 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
           Column(
-            children: marketData.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        item['crop'] as String,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF111827),
-                        ),
-                        overflow: TextOverflow.ellipsis,
+            children: marketData
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
                       ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        '${item['price']}/qtl',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            item['icon'] as IconData,
-                            size: 11,
-                            color: item['color'] as Color,
-                          ),
-                          const SizedBox(width: 3),
-                          Flexible(
+                          Expanded(
+                            flex: 3,
                             child: Text(
-                              item['change'] as String,
+                              item['crop'] as String,
                               style: GoogleFonts.inter(
-                                fontSize: 9,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: item['color'] as Color,
+                                color: const Color(0xFF111827),
                               ),
                               overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              '${item['price']}/qtl',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF374151),
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  item['icon'] as IconData,
+                                  size: 11,
+                                  color: item['color'] as Color,
+                                ),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    item['change'] as String,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: item['color'] as Color,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            )).toList(),
+                  ),
+                )
+                .toList(),
           ),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AdviceScreen(showBottomNav: true)),
+                MaterialPageRoute(
+                  builder: (context) => const AdviceScreen(showBottomNav: true),
+                ),
               );
             },
             child: Container(
@@ -1866,7 +2012,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const Icon(Icons.insights, color: Colors.white, size: 16),
                   const SizedBox(width: 8),
                   Text(
-                    AppLocalizations.of(context)!.getText('view_detailed_analysis'),
+                    AppLocalizations.of(
+                      context,
+                    )!.getText('view_detailed_analysis'),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -1881,5 +2029,4 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
 }
