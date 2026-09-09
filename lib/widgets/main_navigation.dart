@@ -7,11 +7,8 @@ import '../screens/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   final int initialIndex;
-  
-  const MainNavigation({
-    super.key,
-    this.initialIndex = 0,
-  });
+
+  const MainNavigation({super.key, this.initialIndex = 0});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -48,22 +45,31 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
+      body: PageView.builder(
         controller: _pageController,
         onPageChanged: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
-        children: const [
-          HomeScreenContent(),
-          ScanScreenContent(),
-          ChatScreenContent(),
-          AdviceScreenContent(),
-          ProfileScreen(),
-        ],
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          switch (index) {
+            case 1:
+              return const ScanScreenContent();
+            case 2:
+              return const ChatScreenContent();
+            case 3:
+              return const AdviceScreenContent();
+            case 4:
+              return const ProfileScreen();
+            default:
+              return const HomeScreenContent();
+          }
+        },
       ),
       bottomNavigationBar: BottomNavigationBar(
+        key: const ValueKey('main-navigation'),
         currentIndex: _currentIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,

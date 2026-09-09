@@ -9,7 +9,7 @@ import '../../services/ai_service.dart';
 
 class ScanScreen extends StatefulWidget {
   final bool showBottomNav;
-  
+
   const ScanScreen({super.key, this.showBottomNav = true});
 
   @override
@@ -19,10 +19,10 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   final ImagePicker _picker = ImagePicker();
   final AIService _aiService = AIService();
-  
+
   bool _isAnalyzing = false;
   File? _selectedImage;
   Map<String, dynamic>? _analysisResult;
@@ -48,12 +48,13 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
   Future<void> _requestCameraPermission() async {
     final status = await Permission.camera.request();
+    if (!mounted) return;
     if (status != PermissionStatus.granted) {
-      _showPermissionDialog();
+      _showPermissionDialog(status.isPermanentlyDenied);
     }
   }
 
-  void _showPermissionDialog() {
+  void _showPermissionDialog(bool permanentlyDenied) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -63,7 +64,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             style: GoogleFonts.inter(fontWeight: FontWeight.w600),
           ),
           content: Text(
-            'Please grant camera permission to analyze plant health.',
+            permanentlyDenied
+                ? 'Camera access is permanently denied. Open system settings to enable it before taking a photo.'
+                : 'Camera access is needed to take a crop photo. You can still choose an image from your gallery.',
             style: GoogleFonts.inter(),
           ),
           actions: [
@@ -89,6 +92,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
   Future<void> _takePlantPhoto() async {
     await _requestCameraPermission();
+    if (!mounted) return;
     if (await Permission.camera.isGranted) {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
@@ -96,6 +100,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         maxWidth: 1024,
         maxHeight: 1024,
       );
+      if (!mounted) return;
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
@@ -113,7 +118,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         maxHeight: 1024,
         imageQuality: 85,
       );
-      
+      if (!mounted) return;
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
@@ -127,18 +132,19 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
   Future<void> _analyzePlantHealth() async {
     if (_selectedImage == null) return;
-    
+    if (!mounted) return;
     setState(() => _isAnalyzing = true);
-    
+
     try {
       // Call AI service for plant health analysis
       final result = await _aiService.analyzePlantHealth(_selectedImage!.path);
-      
+      if (!mounted) return;
       setState(() {
         _analysisResult = result;
         _isAnalyzing = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isAnalyzing = false);
       _showErrorSnackBar('Analysis failed. Please try again.');
     }
@@ -147,10 +153,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
+        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
         backgroundColor: Colors.red[600],
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -175,10 +178,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFFE8F5E9).withOpacity(0.3),
-              Colors.white,
-            ],
+            colors: [const Color(0xFFE8F5E9).withOpacity(0.3), Colors.white],
           ),
         ),
         child: SafeArea(
@@ -191,7 +191,10 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Color(0xFF10B981)),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Color(0xFF10B981),
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     const SizedBox(width: 4),
@@ -209,7 +212,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                 ),
 
                 const SizedBox(height: 8),
-                
+
                 Text(
                   'AI-powered crop health analysis for better farming decisions',
                   style: GoogleFonts.inter(
@@ -247,7 +250,10 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _takePlantPhoto,
-                          icon: const Icon(Icons.camera_alt, color: Colors.white),
+                          icon: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                          ),
                           label: Text(
                             'Take Photo',
                             style: GoogleFonts.inter(
@@ -269,7 +275,10 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _pickImageFromGallery,
-                          icon: const Icon(Icons.photo_library, color: Color(0xFF10B981)),
+                          icon: const Icon(
+                            Icons.photo_library,
+                            color: Color(0xFF10B981),
+                          ),
                           label: Text(
                             'Gallery',
                             style: GoogleFonts.inter(
@@ -290,7 +299,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  
+
                   if (_selectedImage != null || _analysisResult != null) ...[
                     const SizedBox(height: 12),
                     SizedBox(
@@ -313,7 +322,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           ),
         ),
       ),
-      bottomNavigationBar: widget.showBottomNav ? _buildBottomNavigationBar(context) : null,
+      bottomNavigationBar: widget.showBottomNav
+          ? _buildBottomNavigationBar(context)
+          : null,
     );
   }
 
@@ -342,11 +353,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               color: const Color(0xFF10B981).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.eco,
-              size: 40,
-              color: Color(0xFF10B981),
-            ),
+            child: const Icon(Icons.eco, size: 40, color: Color(0xFF10B981)),
           ),
           const SizedBox(height: 20),
           Text(
@@ -467,6 +474,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildAnalysisResultCard() {
+    final unavailable = _analysisResult?['unavailable'] == true;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -493,15 +501,15 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                   color: const Color(0xFF10B981).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: Color(0xFF10B981),
+                child: Icon(
+                  unavailable ? Icons.info_outline : Icons.check_circle,
+                  color: unavailable ? Colors.orange : Color(0xFF10B981),
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                'Analysis Complete',
+                unavailable ? 'Analysis Unavailable' : 'Analysis Complete',
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -511,7 +519,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           if (_selectedImage != null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -524,7 +532,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 16),
           ],
-          
+
           // Crop Type Badge
           if (_analysisResult?['crop_type'] != null) ...[
             Container(
@@ -544,9 +552,9 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 16),
           ],
-          
+
           Text(
-            'Health Assessment',
+            unavailable ? 'Safety Notice' : 'Health Assessment',
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -555,20 +563,25 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 8),
           Text(
-            _analysisResult?['status'] ?? 'Analysis completed successfully. Your crop appears to be in good health.',
+            _analysisResult?['status'] ??
+                'Analysis completed successfully. Your crop appears to be in good health.',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: const Color(0xFF6B7280),
               height: 1.5,
             ),
           ),
-          
+
           // Yield Prediction
           if (_analysisResult?['yield_prediction'] != null) ...[
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.trending_up, color: Color(0xFF10B981), size: 16),
+                const Icon(
+                  Icons.trending_up,
+                  color: Color(0xFF10B981),
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'Expected: ${_analysisResult!['yield_prediction']}',
@@ -581,7 +594,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               ],
             ),
           ],
-          
+
           if (_analysisResult?['recommendations'] != null) ...[
             const SizedBox(height: 16),
             Text(
@@ -602,7 +615,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               ),
             ),
           ],
-          
+
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -611,7 +624,8 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AdviceScreen(showBottomNav: true),
+                    builder: (context) =>
+                        const AdviceScreen(showBottomNav: true),
                   ),
                 );
               },
@@ -644,12 +658,16 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
         if (index == 0) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const HomeScreen(showBottomNav: true)),
+            MaterialPageRoute(
+              builder: (_) => const HomeScreen(showBottomNav: true),
+            ),
           );
         } else if (index == 2) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const AdviceScreen(showBottomNav: true)),
+            MaterialPageRoute(
+              builder: (_) => const AdviceScreen(showBottomNav: true),
+            ),
           );
         }
         // Current tab (scan) - no action needed
@@ -666,10 +684,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
       iconSize: 22,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.eco),
-          label: 'Scan Crop',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.eco), label: 'Scan Crop'),
         BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: 'Advice'),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),

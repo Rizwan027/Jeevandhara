@@ -14,11 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: subosito/flutter-action@v2
         with:
-          node-version: '22'
-      # Trusted publishing (OIDC) needs npm >= 11.5.1; Node 22 ships npm 10.
-      - run: npm install -g npm@latest
-      # No token: id-token: write above lets npm authenticate via OIDC, and
-      # provenance is attached automatically. access set in publishConfig.
-      - run: npm publish
+          flutter-version: '3.35.2'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build appbundle --release

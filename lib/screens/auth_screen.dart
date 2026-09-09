@@ -28,33 +28,59 @@ class _AuthScreenState extends State<AuthScreen> {
       final auth = FirebaseAuth.instance;
 
       if (_isLogin) {
-        await auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        await auth.signInWithEmailAndPassword(email: email, password: password);
       } else {
         final credential = await auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(credential.user!.uid)
-            .set({
-          'name': _nameController.text.trim(),
-          'email': email,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+        var profileSaved = true;
+        try {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(credential.user!.uid)
+              .set({
+                'name': _nameController.text.trim(),
+                'email': email,
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+        } on FirebaseException {
+          profileSaved = false;
+        }
+
+        var verificationSent = true;
+        try {
+          await credential.user!.sendEmailVerification();
+        } on FirebaseAuthException {
+          verificationSent = false;
+        }
+
+        if (!mounted) return;
+        if (!profileSaved || !verificationSent) {
+          final pendingTasks = [
+            if (!profileSaved) 'profile setup',
+            if (!verificationSent) 'verification email',
+          ].join(' and ');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Account created. Complete $pendingTasks later from your profile.',
+              ),
+            ),
+          );
+        }
       }
     } on FirebaseAuthException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_authErrorMessage(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_authErrorMessage(error))));
     } on FirebaseException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message ?? 'Unable to save your profile.')),
+        SnackBar(
+          content: Text(error.message ?? 'Unable to save your profile.'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -71,6 +97,14 @@ class _AuthScreenState extends State<AuthScreen> {
       case 'wrong-password':
       case 'user-not-found':
         return 'The email or password is incorrect.';
+      case 'operation-not-allowed':
+        return 'Email sign-in is disabled for this Firebase project. Enable Email/Password in Firebase Console.';
+      case 'user-disabled':
+        return 'This account has been disabled. Contact support.';
+      case 'too-many-requests':
+        return 'Too many attempts. Wait a few minutes and try again.';
+      case 'network-request-failed':
+        return 'Network connection failed. Check your internet connection and try again.';
       case 'weak-password':
         return 'Use a password with at least 6 characters.';
       default:
@@ -122,7 +156,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           prefixIcon: Icon(Icons.person_outline),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Enter your name'
                             : null,
                       ),
@@ -141,7 +176,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         if (value == null || value.trim().isEmpty) {
                           return 'Enter your email';
                         }
-                        if (!value.contains('@')) return 'Enter a valid email';
+                        final emailPattern = RegExp(
+                          r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                        );
+                        if (!emailPattern.hasMatch(value.trim())) {
+                          return 'Enter a valid email';
+                        }
                         return null;
                       },
                     ),
@@ -196,6 +236,12 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    if (_isLogin)
+                      TextButton(
+                        onPressed: _isLoading ? null : _sendPasswordReset,
+                        child: const Text('Forgot password?'),
+                      ),
+                    const SizedBox(height: 4),
                     TextButton(
                       onPressed: _isLoading
                           ? null
@@ -214,6 +260,28 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _sendPasswordReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter your email first.')));
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset email sent.')),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_authErrorMessage(error))));
+    }
   }
 
   @override

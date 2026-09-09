@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/soil_data_service.dart';
 
@@ -64,25 +65,36 @@ class _InputDataScreenState extends State<InputDataScreen>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
 
     // Sync controllers with slider values
     _syncControllersWithSliders();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final data = await SoilDataService.getSoilData(userId: user.uid);
+    if (!mounted || data == null) return;
+    _phValue = data['ph'] ?? _phValue;
+    _moistureValue = data['moisture'] ?? _moistureValue;
+    _temperatureValue = data['temperature'] ?? _temperatureValue;
+    _nitrogenValue = data['nitrogen'] ?? _nitrogenValue;
+    _phosphorusValue = data['phosphorus'] ?? _phosphorusValue;
+    _potassiumValue = data['potassium'] ?? _potassiumValue;
+    setState(_syncControllersWithSliders);
   }
 
   void _syncControllersWithSliders() {
@@ -127,7 +139,11 @@ class _InputDataScreenState extends State<InputDataScreen>
                 ),
               ],
             ),
-            child: const Icon(Icons.arrow_back, color: Color(0xFF10B981), size: 20),
+            child: const Icon(
+              Icons.arrow_back,
+              color: Color(0xFF10B981),
+              size: 20,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -139,7 +155,9 @@ class _InputDataScreenState extends State<InputDataScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Tooltip(
-                  message: _useSliders ? 'Switch to text input' : 'Switch to sliders',
+                  message: _useSliders
+                      ? 'Switch to text input'
+                      : 'Switch to sliders',
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -251,7 +269,10 @@ class _InputDataScreenState extends State<InputDataScreen>
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                      border: Border.all(
+                        color: const Color(0xFFE5E7EB),
+                        width: 1,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.04),
@@ -269,7 +290,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withOpacity(0.15),
+                                color: const Color(
+                                  0xFF10B981,
+                                ).withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -310,7 +333,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                     (value) {
                                       setState(() {
                                         _phValue = value;
-                                        _phController.text = value.toStringAsFixed(1);
+                                        _phController.text = value
+                                            .toStringAsFixed(1);
                                       });
                                     },
                                   ),
@@ -329,7 +353,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                     (value) {
                                       setState(() {
                                         _moistureValue = value;
-                                        _moistureController.text = value.toStringAsFixed(0);
+                                        _moistureController.text = value
+                                            .toStringAsFixed(0);
                                       });
                                     },
                                   ),
@@ -348,7 +373,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                     (value) {
                                       setState(() {
                                         _temperatureValue = value;
-                                        _temperatureController.text = value.toStringAsFixed(0);
+                                        _temperatureController.text = value
+                                            .toStringAsFixed(0);
                                       });
                                     },
                                   ),
@@ -407,7 +433,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                       (value) {
                                         setState(() {
                                           _nitrogenValue = value;
-                                          _nitrogenController.text = value.toStringAsFixed(0);
+                                          _nitrogenController.text = value
+                                              .toStringAsFixed(0);
                                         });
                                       },
                                     ),
@@ -422,7 +449,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                       (value) {
                                         setState(() {
                                           _phosphorusValue = value;
-                                          _phosphorusController.text = value.toStringAsFixed(0);
+                                          _phosphorusController.text = value
+                                              .toStringAsFixed(0);
                                         });
                                       },
                                     ),
@@ -437,7 +465,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                       (value) {
                                         setState(() {
                                           _potassiumValue = value;
-                                          _potassiumController.text = value.toStringAsFixed(0);
+                                          _potassiumController.text = value
+                                              .toStringAsFixed(0);
                                         });
                                       },
                                     ),
@@ -476,7 +505,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                                   height: 16,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -574,14 +605,17 @@ class _InputDataScreenState extends State<InputDataScreen>
                     inactiveTrackColor: color.withOpacity(0.3),
                     thumbColor: color,
                     overlayColor: color.withOpacity(0.2),
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 6,
+                    ),
                     trackHeight: 3,
                   ),
                   child: Slider(
                     value: value,
                     min: min,
                     max: max,
-                    divisions: ((max - min) / (decimals == 0 ? 1 : 0.1)).round(),
+                    divisions: ((max - min) / (decimals == 0 ? 1 : 0.1))
+                        .round(),
                     onChanged: (newValue) {
                       onChanged(newValue);
                       HapticFeedback.lightImpact();
@@ -594,15 +628,21 @@ class _InputDataScreenState extends State<InputDataScreen>
         ] else ...[
           TextFormField(
             controller: controller,
-            keyboardType: TextInputType.numberWithOptions(decimal: decimals > 0),
+            keyboardType: TextInputType.numberWithOptions(
+              decimal: decimals > 0,
+            ),
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,' + decimals.toString() + '}')),
+              FilteringTextInputFormatter.allow(
+                RegExp(r'^\d+\.?\d{0,' + decimals.toString() + '}'),
+              ),
             ],
             validator: (value) {
               if (value == null || value.isEmpty) return 'Required';
               final numValue = double.tryParse(value);
               if (numValue == null) return 'Invalid';
-              if (numValue < min || numValue > max) return '${min.toStringAsFixed(decimals)}-${max.toStringAsFixed(decimals)}';
+              if (numValue < min || numValue > max) {
+                return '${min.toStringAsFixed(decimals)}-${max.toStringAsFixed(decimals)}';
+              }
               return null;
             },
             onChanged: (value) {
@@ -693,7 +733,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                     inactiveTrackColor: color.withOpacity(0.3),
                     thumbColor: color,
                     overlayColor: color.withOpacity(0.2),
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
                     trackHeight: 2,
                   ),
                   child: Slider(
@@ -765,8 +807,6 @@ class _InputDataScreenState extends State<InputDataScreen>
     );
   }
 
-
-
   Future<void> _saveData() async {
     // Validate form
     if (!_formKey.currentState!.validate()) {
@@ -796,10 +836,11 @@ class _InputDataScreenState extends State<InputDataScreen>
       };
 
       // Save soil data to local storage
-      await SoilDataService.saveSoilData(soilData);
-
-      // Simulate processing time
-      await Future.delayed(const Duration(milliseconds: 1000));
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw StateError('You must be signed in to save soil data.');
+      }
+      await SoilDataService.saveSoilData(soilData, userId: user.uid);
 
       // Show success message
       if (mounted) {
@@ -846,20 +887,19 @@ class _InputDataScreenState extends State<InputDataScreen>
             ),
             backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             margin: const EdgeInsets.all(16),
             duration: const Duration(milliseconds: 3000),
           ),
         );
 
-        // Navigate back with success haptic
-        await Future.delayed(const Duration(milliseconds: 500));
         HapticFeedback.lightImpact();
-        
-        Navigator.pop(context, true); // Return true to indicate data was saved
+        if (mounted) Navigator.pop(context, true);
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to save data. Please try again.');
+      if (mounted) _showErrorSnackBar('Failed to save data. Please try again.');
     } finally {
       if (mounted) {
         setState(() {

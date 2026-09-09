@@ -1,24 +1,23 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'dart:developer' as developer;
 
 class AIService {
-  static const String _apiKey =
-      'AIzaSyDn1tGER3e7laK3XpgOiUOve8nsEEHB7q8'; // You'll need to add your API key
+  // AI calls require an authenticated backend; client-side provider keys are unsafe.
+  static const bool _isBackendConfigured = false;
   late final GenerativeModel _model;
 
   AIService() {
-    _model = GenerativeModel(
-      model: 'gemini-2.0-flash',
-      apiKey: _apiKey,
-      generationConfig: GenerationConfig(
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 512,
-      ),
-    );
+    if (_isBackendConfigured) {
+      throw UnsupportedError('AI backend is not configured for this client.');
+    }
   }
 
+  bool isAIAvailable() => _isBackendConfigured;
+
   Future<String> getAgriculturalAdvice(String userQuestion) async {
+    if (!isAIAvailable()) {
+      return 'AI advice is currently unavailable. Please consult a qualified local agricultural expert for crop, disease, or treatment decisions.';
+    }
     try {
       // Enhanced prompt with agricultural context
       final prompt =
@@ -49,7 +48,7 @@ Provide a concise, practical response:
         return _getFallbackResponse(userQuestion);
       }
     } catch (e) {
-      print('AI Service Error: $e');
+      developer.log('AI service error', error: e, name: 'AIService');
       return _getFallbackResponse(userQuestion);
     }
   }
@@ -128,56 +127,14 @@ What would you like to know?""";
   }
 
   Future<Map<String, dynamic>> analyzePlantHealth(String imagePath) async {
-    try {
-      // For now, simulate AI crop analysis with mock data
-      // In production, this would send the image to AI service for crop analysis
-      
-      await Future.delayed(const Duration(seconds: 3)); // Simulate processing time
-      
-      // Mock crop analysis result with agricultural focus
-      final cropTypes = ['Rice', 'Wheat', 'Cotton', 'Sugarcane', 'Maize', 'Tomato'];
-      final selectedCrop = cropTypes[DateTime.now().millisecond % cropTypes.length];
-      
-      return {
-        'status': 'Your $selectedCrop crop appears healthy with good growth indicators. No significant diseases detected at this growth stage.',
-        'confidence': 0.87,
-        'crop_type': selectedCrop,
-        'growth_stage': 'Vegetative Growth',
-        'recommendations': '''
-🌾 Farming Recommendations for $selectedCrop:
-
-💧 **Irrigation Management:**
-• Water requirement: 25-30mm per week
-• Maintain soil moisture at 80% field capacity
-• Avoid waterlogging during current growth stage
-
-🌱 **Nutrient Management:**
-• Apply Urea: 50kg/hectare (split application)
-• DAP: 25kg/hectare at base
-• Potash: 20kg/hectare before flowering
-
-🔍 **Health Score: 87/100 (Excellent)**
-
-⚠️ **Monitor For:**
-• Early signs of pest infestation
-• Yellowing of lower leaves (nitrogen deficiency)
-• Fungal diseases in humid conditions
-''',
-        'diseases_detected': [],
-        'pests_detected': [],
-        'nutrient_status': 'Adequate',
-        'yield_prediction': '4.2-4.8 tons/hectare',
-        'analysis_date': DateTime.now().toIso8601String(),
-      };
-    } catch (e) {
-      print('Crop Analysis Error: $e');
-      return {
-        'status': 'Analysis completed. Please consult with agricultural experts for detailed crop management.',
-        'confidence': 0.0,
-        'recommendations': 'Unable to provide specific recommendations. Please try again or consult with local agricultural extension officers.',
-        'error': true,
-      };
-    }
+    return {
+      'status': 'Crop diagnosis is unavailable in this version.',
+      'confidence': 0.0,
+      'recommendations':
+          'This image has not been analyzed. Do not use this screen to make treatment or pesticide decisions. Consult a qualified agricultural expert for diagnosis.',
+      'error': true,
+      'unavailable': true,
+    };
   }
 
   // Get crop recommendations based on soil data and weather
@@ -187,7 +144,11 @@ What would you like to know?""";
     String? location,
   }) async {
     try {
-      final prompt = _buildCropRecommendationPrompt(soilData, weatherData, location);
+      final prompt = _buildCropRecommendationPrompt(
+        soilData,
+        weatherData,
+        location,
+      );
       final content = [Content.text(prompt)];
       final response = await _model.generateContent(content);
 
@@ -197,7 +158,7 @@ What would you like to know?""";
         return _getFallbackCropRecommendation(soilData, weatherData);
       }
     } catch (e) {
-      print('Crop Recommendation Error: $e');
+      developer.log('Crop recommendation error', error: e, name: 'AIService');
       return _getFallbackCropRecommendation(soilData, weatherData);
     }
   }
@@ -261,7 +222,7 @@ Keep response structured, practical, and under 300 words. Use emojis for section
     // Extract crop recommendations from AI response
     // This is a simplified extraction - in production, you'd use more sophisticated parsing
     final crops = <RecommendedCrop>[];
-    
+
     // Common crops based on typical agricultural patterns
     final cropDatabase = {
       'rice': RecommendedCrop(
@@ -360,7 +321,9 @@ Keep response structured, practical, and under 300 words. Use emojis for section
     );
   }
 
-  WeatherSuitability _calculateWeatherSuitability(Map<String, dynamic> weatherData) {
+  WeatherSuitability _calculateWeatherSuitability(
+    Map<String, dynamic> weatherData,
+  ) {
     double score = 0;
     List<String> advantages = [];
     List<String> challenges = [];
@@ -403,7 +366,10 @@ Keep response structured, practical, and under 300 words. Use emojis for section
     return "Based on current soil and weather conditions, plant during the recommended season. Prepare field with proper tillage and organic matter incorporation.";
   }
 
-  String _extractFertilizationPlan(String aiResponse, Map<String, double> soilData) {
+  String _extractFertilizationPlan(
+    String aiResponse,
+    Map<String, double> soilData,
+  ) {
     final nitrogen = soilData['nitrogen'] ?? 0;
     final phosphorus = soilData['phosphorus'] ?? 0;
     final potassium = soilData['potassium'] ?? 0;
@@ -412,13 +378,16 @@ Keep response structured, practical, and under 300 words. Use emojis for section
     if (nitrogen < 60) plan += "• Apply Urea: 100-150 kg/hectare\n";
     if (phosphorus < 50) plan += "• Apply DAP: 50-75 kg/hectare\n";
     if (potassium < 60) plan += "• Apply MOP: 40-60 kg/hectare\n";
-    
+
     return plan;
   }
 
-  String _extractIrrigationSchedule(String aiResponse, Map<String, double> soilData) {
+  String _extractIrrigationSchedule(
+    String aiResponse,
+    Map<String, double> soilData,
+  ) {
     final moisture = soilData['moisture'] ?? 50;
-    
+
     if (moisture < 40) {
       return "Immediate irrigation required. Water 2-3 times weekly during establishment phase.";
     } else if (moisture > 80) {
@@ -476,23 +445,21 @@ Keep response structured, practical, and under 300 words. Use emojis for section
       ],
       soilSuitability: _calculateSoilSuitability(soilData),
       weatherSuitability: _calculateWeatherSuitability(weatherData),
-      plantingGuidelines: 'Prepare field with proper drainage and organic matter.',
+      plantingGuidelines:
+          'Prepare field with proper drainage and organic matter.',
       fertilizationPlan: 'Apply balanced NPK fertilizer as per soil test.',
-      irrigationSchedule: 'Maintain adequate moisture throughout growth period.',
+      irrigationSchedule:
+          'Maintain adequate moisture throughout growth period.',
       yieldPredictions: {
         'Rice': '4-6 tons/hectare',
         'Wheat': '3-5 tons/hectare',
         'Vegetables': '10-15 tons/hectare',
       },
       marketInsights: 'Diversify crops for better risk management and profit.',
-      aiRecommendation: 'Fallback recommendation based on standard agricultural practices.',
+      aiRecommendation:
+          'Fallback recommendation based on standard agricultural practices.',
       recommendationDate: DateTime.now(),
     );
-  }
-
-  // Method to check if AI service is available
-  bool isAIAvailable() {
-    return _apiKey != 'YOUR_GEMINI_API_KEY_HERE' && _apiKey.isNotEmpty;
   }
 }
 

@@ -10,7 +10,7 @@ import '../../services/ai_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final bool showBottomNav;
-  
+
   const ChatScreen({super.key, this.showBottomNav = true});
 
   @override
@@ -22,7 +22,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
-  
+
   List<ChatMessage> messages = [];
   bool _isTyping = false;
   late AIService _aiService;
@@ -31,7 +31,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _aiService = AIService();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     _animationController.forward();
-    
+
     // Add welcome message with quick action suggestions
     _addMessage(
       'Hello! I\'m your Smart Agriculture Assistant. 🌾\n\nI can help you with:\n🌱 **Crop Management:** Rice, Wheat, Cotton, Sugarcane varieties\n🔬 **Disease & Pest Control:** AI-powered diagnosis & treatment\n💰 **Market Intelligence:** Live prices & selling strategies\n🌧️ **Weather & Irrigation:** Smart farming recommendations\n🌿 **Soil Health:** pH testing, fertilizers, organic farming\n🏛️ **Government Schemes:** Subsidies, loans, insurance\n\n💡 **Quick Start:** Tap the buttons below or ask me anything!',
@@ -58,11 +58,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _addMessage(String text, {required bool isUser}) {
     setState(() {
-      messages.add(ChatMessage(
-        text: text,
-        isUser: isUser,
-        timestamp: DateTime.now(),
-      ));
+      messages.add(
+        ChatMessage(text: text, isUser: isUser, timestamp: DateTime.now()),
+      );
     });
     _scrollToBottom();
   }
@@ -81,13 +79,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
-    
+
     _addMessage(text, isUser: true);
     _messageController.clear();
-    
+
     // Show typing indicator
     setState(() => _isTyping = true);
-    
+
     // Get AI response
     _getAIResponse(text);
   }
@@ -99,22 +97,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       if (_aiService.isAIAvailable()) {
         response = await _aiService.getAgriculturalAdvice(userMessage);
       } else {
-        response = _getFallbackResponse(userMessage);
+        response =
+            'AI service unavailable. This is general reference information, not live or personalized advice.\n\n${_getFallbackResponse(userMessage)}';
       }
-      
+
       // Add AI response
+      if (!mounted) return;
       setState(() => _isTyping = false);
       _addMessage(response, isUser: false);
     } catch (e) {
       // Fallback to predefined response on error
+      if (!mounted) return;
       setState(() => _isTyping = false);
-      _addMessage(_getFallbackResponse(userMessage), isUser: false);
+      _addMessage(
+        'AI service unavailable. This is general reference information, not live or personalized advice.\n\n${_getFallbackResponse(userMessage)}',
+        isUser: false,
+      );
     }
   }
 
   String _getFallbackResponse(String userMessage) {
     final lowerMessage = userMessage.toLowerCase();
-    
+
     // Use existing predefined response logic as fallback
     if (lowerMessage.contains('rice')) {
       return _getRiceAdvice(lowerMessage);
@@ -124,15 +128,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return _getCottonAdvice(lowerMessage);
     } else if (lowerMessage.contains('sugarcane')) {
       return _getSugarcaneAdvice(lowerMessage);
-    } else if (lowerMessage.contains('disease') || lowerMessage.contains('pest')) {
+    } else if (lowerMessage.contains('disease') ||
+        lowerMessage.contains('pest')) {
       return _getDiseaseAdvice(lowerMessage);
-    } else if (lowerMessage.contains('price') || lowerMessage.contains('market')) {
+    } else if (lowerMessage.contains('price') ||
+        lowerMessage.contains('market')) {
       return _getMarketAdvice(lowerMessage);
-    } else if (lowerMessage.contains('weather') || lowerMessage.contains('rain')) {
+    } else if (lowerMessage.contains('weather') ||
+        lowerMessage.contains('rain')) {
       return _getWeatherAdvice(lowerMessage);
-    } else if (lowerMessage.contains('soil') || lowerMessage.contains('fertilizer')) {
+    } else if (lowerMessage.contains('soil') ||
+        lowerMessage.contains('fertilizer')) {
       return _getSoilAdvice(lowerMessage);
-    } else if (lowerMessage.contains('scheme') || lowerMessage.contains('subsidy')) {
+    } else if (lowerMessage.contains('scheme') ||
+        lowerMessage.contains('subsidy')) {
       return _getGovernmentSchemeAdvice();
     } else if (lowerMessage.contains('hello') || lowerMessage.contains('hi')) {
       return 'Hello! 👋 I\'m your Smart Agriculture Assistant.\n\nI can help you with:\n🌾 Crop recommendations\n🔍 Disease identification\n💰 Market prices\n🌧️ Weather updates\n🚜 Farming techniques\n💡 Government schemes\n\nWhat would you like to know about farming today?';
@@ -140,7 +149,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return _getDefaultResponse();
     }
   }
-
 
   String _getRiceAdvice(String message) {
     if (message.contains('variety') || message.contains('type')) {
@@ -236,10 +244,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     if (widget.showBottomNav)
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, color: Color(0xFF2E7D32)),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Color(0xFF2E7D32),
+                        ),
                       ),
-                    if (!widget.showBottomNav)
-                      const SizedBox(width: 12),
+                    if (!widget.showBottomNav) const SizedBox(width: 12),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -282,14 +292,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ),
 
-
           // Chat Messages and Quick Actions
           Expanded(
             child: Column(
               children: [
                 // Quick Action Buttons (shown when no messages or after welcome)
                 if (messages.length <= 1) _buildQuickActions(),
-                
+
                 // Chat Messages
                 Expanded(
                   child: ListView.builder(
@@ -315,7 +324,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-
   Widget _buildMessageBubble(ChatMessage message) {
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 300),
@@ -328,7 +336,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
               child: Row(
-                mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                mainAxisAlignment: message.isUser
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (!message.isUser) ...[
@@ -342,7 +352,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFF4CAF50,
+                            ).withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -358,9 +370,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ],
                   Flexible(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: message.isUser 
+                        color: message.isUser
                             ? const Color(0xFF4CAF50)
                             : Colors.white,
                         borderRadius: BorderRadius.only(
@@ -371,82 +386,86 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: message.isUser 
+                            color: message.isUser
                                 ? const Color(0xFF4CAF50).withValues(alpha: 0.3)
                                 : Colors.black.withValues(alpha: 0.1),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
                         ],
-                        border: !message.isUser ? Border.all(
-                          color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                          width: 1,
-                        ) : null,
+                        border: !message.isUser
+                            ? Border.all(
+                                color: const Color(
+                                  0xFF4CAF50,
+                                ).withValues(alpha: 0.1),
+                                width: 1,
+                              )
+                            : null,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          message.isUser 
-                            ? Text(
-                                message.text,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                  height: 1.5,
+                          message.isUser
+                              ? Text(
+                                  message.text,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    height: 1.5,
+                                  ),
+                                )
+                              : MarkdownBody(
+                                  data: message.text,
+                                  styleSheet: MarkdownStyleSheet(
+                                    p: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: const Color(0xFF1B5E20),
+                                      height: 1.5,
+                                    ),
+                                    strong: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: const Color(0xFF1B5E20),
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.5,
+                                    ),
+                                    em: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: const Color(0xFF1B5E20),
+                                      fontStyle: FontStyle.italic,
+                                      height: 1.5,
+                                    ),
+                                    h1: GoogleFonts.poppins(
+                                      fontSize: 18,
+                                      color: const Color(0xFF1B5E20),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    h2: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      color: const Color(0xFF1B5E20),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    h3: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      color: const Color(0xFF1B5E20),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    listBullet: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: const Color(0xFF4CAF50),
+                                    ),
+                                    code: GoogleFonts.robotoMono(
+                                      fontSize: 13,
+                                      color: const Color(0xFF2E7D32),
+                                      backgroundColor: const Color(0xFFF1F8E9),
+                                    ),
+                                  ),
                                 ),
-                              )
-                            : MarkdownBody(
-                                data: message.text,
-                                styleSheet: MarkdownStyleSheet(
-                                  p: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF1B5E20),
-                                    height: 1.5,
-                                  ),
-                                  strong: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF1B5E20),
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.5,
-                                  ),
-                                  em: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF1B5E20),
-                                    fontStyle: FontStyle.italic,
-                                    height: 1.5,
-                                  ),
-                                  h1: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    color: const Color(0xFF1B5E20),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  h2: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    color: const Color(0xFF1B5E20),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  h3: GoogleFonts.poppins(
-                                    fontSize: 15,
-                                    color: const Color(0xFF1B5E20),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  listBullet: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF4CAF50),
-                                  ),
-                                  code: GoogleFonts.robotoMono(
-                                    fontSize: 13,
-                                    color: const Color(0xFF2E7D32),
-                                    backgroundColor: const Color(0xFFF1F8E9),
-                                  ),
-                                ),
-                              ),
                           const SizedBox(height: 6),
                           Text(
                             _formatTime(message.timestamp),
                             style: GoogleFonts.poppins(
                               fontSize: 11,
-                              color: message.isUser 
+                              color: message.isUser
                                   ? Colors.white.withValues(alpha: 0.7)
                                   : Colors.grey[500],
                             ),
@@ -467,7 +486,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2E7D32).withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFF2E7D32,
+                            ).withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -507,11 +528,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               color: const Color(0xFF4CAF50),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.psychology,
-              color: Colors.white,
-              size: 16,
-            ),
+            child: const Icon(Icons.psychology, color: Colors.white, size: 16),
           ),
           const SizedBox(width: 8),
           Container(
@@ -570,7 +587,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Widget _buildQuickActions() {
     final quickActions = [
-      {'text': '🦠 Plant Disease', 'query': 'Help with plant disease diagnosis'},
+      {
+        'text': '🦠 Plant Disease',
+        'query': 'Help with plant disease diagnosis',
+      },
       {'text': '🌧️ Weather Tips', 'query': 'Weather and irrigation advice'},
       {'text': '🌱 Soil Health', 'query': 'Soil testing and fertilizer advice'},
       {'text': '💰 Market Prices', 'query': 'What are current market prices?'},
@@ -593,34 +613,41 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           Wrap(
             spacing: 6,
             runSpacing: 6,
-            children: quickActions.map((action) => 
-              GestureDetector(
-                onTap: () => _sendMessage(action['query']!),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.3)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+            children: quickActions
+                .map(
+                  (action) => GestureDetector(
+                    onTap: () => _sendMessage(action['query']!),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                    ],
-                  ),
-                  child: Text(
-                    action['text']!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1B5E20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        action['text']!,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF1B5E20),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ).toList(),
+                )
+                .toList(),
           ),
           const SizedBox(height: 8),
         ],
@@ -671,7 +698,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ),
                 ),
               ),
-            
+
             // Input row
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -698,7 +725,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                
+
                 // Text input field
                 Expanded(
                   child: Container(
@@ -713,7 +740,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                     child: TextField(
                       controller: _messageController,
-                      style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF1B5E20)),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: const Color(0xFF1B5E20),
+                      ),
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
                       textCapitalization: TextCapitalization.sentences,
@@ -756,9 +786,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 8),
-                
+
                 // Send button
                 GestureDetector(
                   onTap: () => _sendMessage(_messageController.text),
@@ -774,7 +804,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       boxShadow: _messageController.text.trim().isNotEmpty
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF4CAF50).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFF4CAF50,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 6),
                               ),
@@ -899,7 +931,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAttachmentOption(IconData icon, String title, String subtitle, VoidCallback onTap) {
+  Widget _buildAttachmentOption(
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -923,10 +960,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           ),
           Text(
             subtitle,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              color: Colors.grey[600],
-            ),
+            style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -940,17 +974,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         if (index == 0) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const HomeScreen(showBottomNav: true)),
+            MaterialPageRoute(
+              builder: (_) => const HomeScreen(showBottomNav: true),
+            ),
           );
         } else if (index == 1) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const AdviceScreen(showBottomNav: true)),
+            MaterialPageRoute(
+              builder: (_) => const AdviceScreen(showBottomNav: true),
+            ),
           );
         } else if (index == 2) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const ScanScreen(showBottomNav: true)),
+            MaterialPageRoute(
+              builder: (_) => const ScanScreen(showBottomNav: true),
+            ),
           );
         }
         // Current tab (chat) - no action needed
@@ -968,10 +1008,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: 'Advice'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.eco),
-          label: 'Scan Crop',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.eco), label: 'Scan Crop'),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
@@ -995,10 +1032,7 @@ class _QuestionChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.roboto(
-          fontSize: 13,
-          color: const Color(0xFF1B5E20),
-        ),
+        style: GoogleFonts.roboto(fontSize: 13, color: const Color(0xFF1B5E20)),
       ),
     );
   }
@@ -1062,11 +1096,7 @@ class _AssistantMessageBubble extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
-                Icons.volume_up,
-                size: 16,
-                color: Color(0xFF4CAF50),
-              ),
+              const Icon(Icons.volume_up, size: 16, color: Color(0xFF4CAF50)),
             ],
           ),
         ),
@@ -1138,11 +1168,7 @@ class _ChatInputBar extends StatelessWidget {
               color: Color(0xFF4CAF50),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.send,
-              size: 20,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.send, size: 20, color: Colors.white),
           ),
         ],
       ),
@@ -1162,5 +1188,3 @@ class ChatMessage {
     required this.timestamp,
   });
 }
-
-

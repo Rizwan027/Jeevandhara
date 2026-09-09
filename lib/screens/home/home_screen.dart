@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
 import '../advice/advice_screen.dart';
 import '../chat/chat_screen.dart';
@@ -65,9 +66,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             _isLoadingWeather = false;
           });
         }
+      } else if (mounted) {
+        final cached = await _weatherService.getCachedWeather();
+        if (!mounted) return;
+        setState(() {
+          _currentWeather = cached?.weather;
+          _weatherForecast = cached?.forecast ?? forecast;
+          _weatherAlerts = cached == null
+              ? []
+              : _weatherService.generateFarmingAlerts(
+                  cached.weather,
+                  cached.forecast,
+                );
+          _isLoadingWeather = false;
+        });
       }
     } catch (e) {
-      print('Error loading weather: $e');
+      developer.log('Error loading weather', error: e, name: 'HomeScreen');
       if (mounted) {
         setState(() {
           _isLoadingWeather = false;
@@ -247,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                     const SizedBox(height: 32),
 
-                    // Live Market Prices Section
+                    // Sample market prices are clearly labeled in the section.
                     _buildSectionTitle(
                       AppLocalizations.of(
                         context,
@@ -309,8 +324,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _getTimeOfDay(BuildContext context) {
     final hour = DateTime.now().hour;
     if (hour < 12) return AppLocalizations.of(context)!.getText('good_morning');
-    if (hour < 17)
+    if (hour < 17) {
       return AppLocalizations.of(context)!.getText('good_afternoon');
+    }
     return AppLocalizations.of(context)!.getText('good_evening');
   }
 
@@ -1596,8 +1612,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final desc = description.toLowerCase();
     if (desc.contains('rain')) return Icons.water_drop_outlined;
     if (desc.contains('cloud')) return Icons.cloud_outlined;
-    if (desc.contains('sun') || desc.contains('clear'))
+    if (desc.contains('sun') || desc.contains('clear')) {
       return Icons.wb_sunny_outlined;
+    }
     if (desc.contains('storm')) return Icons.thunderstorm_outlined;
     if (desc.contains('snow')) return Icons.ac_unit_outlined;
     return Icons.wb_cloudy_outlined;
@@ -1877,7 +1894,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 12),
               Text(
-                AppLocalizations.of(context)!.getText('live_market_prices'),
+                'Sample market prices',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -1904,7 +1921,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      AppLocalizations.of(context)!.getText('live'),
+                      'SAMPLE',
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,

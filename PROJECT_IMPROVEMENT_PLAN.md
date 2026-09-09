@@ -457,56 +457,56 @@ Actions:
 
 # 13. Prioritized Master Task List
 
-Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. All statuses start as TODO.
+Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. Statuses below reflect the implementation state as of 2026-09-09.
 
-| ID | Task | Category | Priority | Difficulty | Dependencies | Status |
-|----|------|----------|----------|------------|--------------|--------|
-| T01 | Rotate and remove exposed Gemini/OpenWeather keys | Security | P0 | Medium | Provider access | TODO |
-| T02 | Add authenticated backend/proxy for AI and weather | Security/Backend | P0 | Hard | T01 | TODO |
-| T03 | Deploy and test owner-only Firestore rules | Security/Firebase | P0 | Medium | Firebase Console | TODO |
-| T04 | Add Firebase initialization failure and retry UI | Reliability | P0 | Easy | T05 | TODO |
-| T05 | Generate/configure Firebase options for supported platforms | Platform/Firebase | P0 | Medium | Platform decision | TODO |
-| T06 | Replace or clearly disable fabricated crop diagnosis | Safety/AI | P0 | Hard | T02 | TODO |
-| T07 | Fix/register the `/input_data` route | Navigation | P0 | Easy | T08 | TODO |
-| T08 | Consolidate to one authenticated navigation shell | Architecture | P0 | Hard | Product flow decision | TODO |
-| T09 | Configure protected release signing | Android/Release | P0 | Medium | Signing credentials | TODO |
-| T10 | Review and resolve deleted platform files safely | Platform/Git | P0 | Medium | Owner confirmation | TODO |
-| T11 | Replace stale counter widget test | Testing | P0 | Easy | T08 | TODO |
-| T12 | Add email verification and password reset | Authentication | P1 | Medium | Firebase Auth | TODO |
-| T13 | Add account deletion and auth lifecycle recovery | Authentication | P1 | Medium | T03/T12 | TODO |
-| T14 | Make signup profile provisioning retryable/consistent | Authentication | P1 | Medium | T03 | TODO |
-| T15 | Persist onboarding completion and selected language | UX/State | P1 | Easy | Auth flow | TODO |
-| T16 | Complete localization for all screens and errors | UX/Localization | P1 | Medium | T08 | TODO |
-| T17 | Load, validate, and safely persist soil data | Data/UX | P1 | Medium | Data policy | TODO |
-| T18 | Scope soil data per authenticated user or document local-only behavior | Data/Security | P1 | Medium | T03/T17 | TODO |
-| T19 | Add weather timeout, validation, retry, cache, and stale state | Weather | P1 | Medium | T02 | TODO |
-| T20 | Reuse one location lookup and aggregate daily forecasts | Weather/Performance | P1 | Medium | T19 | TODO |
-| T21 | Label/remove static market data and implement trusted source | Product/Data | P1 | Medium | Data source | TODO |
-| T22 | Add explicit loading/error/empty/retry states across features | UX/Reliability | P1 | Medium | T08 | TODO |
-| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | TODO |
-| T24 | Complete or remove share, notifications, settings, and attachment actions | Product/UX | P1 | Medium | Product decision | TODO |
-| T25 | Fix async lifecycle guards and request cancellation everywhere | Reliability | P1 | Medium | T22 | TODO |
-| T26 | Add camera/photo/location permission explanations | Android/UX | P1 | Easy | Platform testing | TODO |
-| T27 | Add responsive layouts for narrow, large-text, tablet, and landscape states | UI/Responsive | P1 | Medium | T08 | TODO |
-| T28 | Complete profile loading/error/empty and safe avatar initial handling | Profile | P1 | Easy | T03 | TODO |
-| T29 | Add semantics, tooltips, contrast, and accessible controls | Accessibility | P1 | Medium | T08 | TODO |
-| T30 | Split Home and feature screens into focused widgets/controllers | Architecture | P2 | Hard | T08 | TODO |
-| T31 | Extract typed models and repositories/services | Architecture | P2 | Hard | T30 | TODO |
-| T32 | Remove duplicate navigation and dead widgets/methods | Cleanup | P2 | Medium | T08/T30 | TODO |
-| T33 | Remove confirmed unused dependencies | Cleanup | P2 | Easy | Usage verification | TODO |
-| T34 | Replace deprecated `withOpacity` usage | Code quality | P2 | Easy | None | TODO |
-| T35 | Replace production `print` calls with structured logging | Code quality | P2 | Easy | Logging choice | TODO |
-| T36 | Add unit tests for weather, soil, recommendations, localization, and storage | Testing | P2 | Medium | T31 | TODO |
-| T37 | Add widget tests for auth, routing, profile, and async states | Testing | P2 | Medium | T08/T22 | TODO |
-| T38 | Add Firebase/device permission integration tests | Testing | P2 | Hard | T03/T26 | TODO |
-| T39 | Lazy-load feature work and reduce chat rebuild scope | Performance | P2 | Medium | T30 | TODO |
-| T40 | Add image resizing, caching, cleanup, and request cancellation | Performance/AI | P2 | Medium | T06 | TODO |
-| T41 | Add offline/stale caching with visible status | Performance/Product | P2 | Hard | T19/T31 | TODO |
-| T42 | Add user history for scans, soil, advice, and recommendations | Product/Data | P2 | Hard | T03/T31 | TODO |
-| T43 | Add crop/location/season personalization | Product | P3 | Medium | T42 | TODO |
-| T44 | Add notification scheduling and actionable alerts | Product | P3 | Hard | T24/T42 | TODO |
-| T45 | Improve splash, launcher, branding, and web metadata | UI/Platform | P3 | Easy | Platform decision | TODO |
-| T46 | Add analytics/crash monitoring with privacy controls | Operations | P3 | Medium | Privacy review | TODO |
+| ID | Task | Category | Priority | Difficulty | Dependencies | Status / implementation note |
+|----|------|----------|----------|------------|--------------|------------------------------|
+| T01 | Rotate and remove exposed Gemini/OpenWeather keys | Security | P0 | Medium | Provider access | [BLOCKED - MANUAL ACTION] Source keys removed; rotate provider keys and purge exposed values from Git history. |
+| T02 | Add authenticated backend/proxy for AI and weather | Security/Backend | P0 | Hard | T01 | [BLOCKED - MANUAL ACTION] Deploy an authenticated backend/proxy with quotas, abuse controls, and server-held provider secrets. |
+| T03 | Deploy and test owner-only Firestore rules | Security/Firebase | P0 | Medium | Firebase Console | [BLOCKED - MANUAL ACTION] Configure and deploy rules allowing each authenticated user access only to `users/{uid}`. |
+| T04 | Add Firebase initialization failure and retry UI | Reliability | P0 | Easy | T05 | [COMPLETED] Added startup error boundary with retry UI. |
+| T05 | Generate/configure Firebase options for supported platforms | Platform/Firebase | P0 | Medium | Platform decision | [BLOCKED - MANUAL ACTION] Generate and register Firebase configuration for each supported platform. |
+| T06 | Replace or clearly disable fabricated crop diagnosis | Safety/AI | P0 | Hard | T02 | [PARTIALLY COMPLETED] Mock diagnosis is disabled and labeled unavailable; validated real image inference remains. |
+| T07 | Fix/register the `/input_data` route | Navigation | P0 | Easy | T08 | [COMPLETED] Registered the `/input_data` route. |
+| T08 | Consolidate to one authenticated navigation shell | Architecture | P0 | Hard | Product flow decision | [PARTIALLY COMPLETED] MainNavigation is the primary lazy shell; legacy feature-level navigation paths remain in older screens. |
+| T09 | Configure protected release signing | Android/Release | P0 | Medium | Signing credentials | [PARTIALLY COMPLETED] Debug signing was removed and `key.properties` support added; keystore and CI secrets remain to be configured. |
+| T10 | Review and resolve deleted platform files safely | Platform/Git | P0 | Medium | Owner confirmation | [BLOCKED - MANUAL ACTION] Owner must review intentional iOS/macOS file deletions and restore any required platform assets. |
+| T11 | Replace stale counter widget test | Testing | P0 | Easy | T08 | [COMPLETED] Replaced the counter test with a startup recovery smoke test. |
+| T12 | Add email verification and password reset | Authentication | P1 | Medium | Firebase Auth | [COMPLETED] Added verification email, verification status/resend action, and password reset. |
+| T13 | Add account deletion and auth lifecycle recovery | Authentication | P1 | Medium | T03/T12 | [COMPLETED] Added reauthentication-protected profile deletion and recent-login error handling. |
+| T14 | Make signup profile provisioning retryable/consistent | Authentication | P1 | Medium | T03 | [COMPLETED] Auth creation is retained while profile and verification setup failures are reported as retryable follow-up work. |
+| T15 | Persist onboarding completion and selected language | UX/State | P1 | Easy | Auth flow | [COMPLETED] Added per-user persistence plus Settings controls to change language and revisit onboarding. |
+| T16 | Complete localization for all screens and errors | UX/Localization | P1 | Medium | T08 | [PARTIALLY COMPLETED] Language switching exists, but most feature labels and errors remain hardcoded English. |
+| T17 | Load, validate, and safely persist soil data | Data/UX | P1 | Medium | Data policy | [COMPLETED] Added load-on-entry, corruption handling, service-layer range validation, and immediate save feedback. |
+| T18 | Scope soil data per authenticated user or document local-only behavior | Data/Security | P1 | Medium | T03/T17 | [COMPLETED] Soil preferences use authenticated UID-specific local keys. |
+| T19 | Add weather timeout, validation, retry, cache, and stale state | Weather | P1 | Medium | T02 | [PARTIALLY COMPLETED] Added validated models, local cache, stale metadata, and explicit unavailable state; live backend timeout/retry remains. |
+| T20 | Reuse one location lookup and aggregate daily forecasts | Weather/Performance | P1 | Medium | T19 | [PARTIALLY COMPLETED] Added daily aggregation; shared live location lookup remains blocked by backend/weather integration. |
+| T21 | Label/remove static market data and implement trusted source | Product/Data | P1 | Medium | Data source | [PARTIALLY COMPLETED] Static values are labeled sample data; trusted live source remains unavailable. |
+| T22 | Add explicit loading/error/empty/retry states across features | UX/Reliability | P1 | Medium | T08 | [PARTIALLY COMPLETED] Added unavailable weather, cached-weather, settings, profile, and scan states; feature-wide retry coverage remains. |
+| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | [PARTIALLY COMPLETED] Safety disclaimer and unavailable state exist; source metadata, confidence handling, and expert escalation remain. |
+| T24 | Complete or remove share, notifications, settings, and attachment actions | Product/UX | P1 | Medium | Product decision | [PARTIALLY COMPLETED] Settings is implemented; share, notifications, and chat attachments remain incomplete. |
+| T25 | Fix async lifecycle guards and request cancellation everywhere | Reliability | P1 | Medium | T22 | [PARTIALLY COMPLETED] Some mounted guards exist; complete lifecycle guards and cancellation across async flows. |
+| T26 | Add camera/photo/location permission explanations | Android/UX | P1 | Easy | Platform testing | [PARTIALLY COMPLETED] Camera denied/permanently-denied explanations were added; location permission UX remains. |
+| T27 | Add responsive layouts for narrow, large-text, tablet, and landscape states | UI/Responsive | P1 | Medium | T08 | [NOT STARTED] |
+| T28 | Complete profile loading/error/empty and safe avatar initial handling | Profile | P1 | Easy | T03 | [COMPLETED] Added profile loading/error states, safe initials, verification status, and account actions. |
+| T29 | Add semantics, tooltips, contrast, and accessible controls | Accessibility | P1 | Medium | T08 | [PARTIALLY COMPLETED] Existing labeled controls and navigation semantics were retained/improved; full screen-reader, contrast, and large-text coverage remains. |
+| T30 | Split Home and feature screens into focused widgets/controllers | Architecture | P2 | Hard | T08 | [NOT STARTED] |
+| T31 | Extract typed models and repositories/services | Architecture | P2 | Hard | T30 | [PARTIALLY COMPLETED] Typed weather/soil service models exist; repository and controller separation remains. |
+| T32 | Remove duplicate navigation and dead widgets/methods | Cleanup | P2 | Medium | T08/T30 | [PARTIALLY COMPLETED] Main shell usage is established; duplicate feature navigation and dead builders remain. |
+| T33 | Remove confirmed unused dependencies | Cleanup | P2 | Easy | Usage verification | [COMPLETED] Removed `mobile_scanner`, `flutter_svg`, and `cupertino_icons`. |
+| T34 | Replace deprecated `withOpacity` usage | Code quality | P2 | Easy | None | [PARTIALLY COMPLETED] Automated cleanup was attempted; many deprecated opacity calls remain in legacy screens. |
+| T35 | Replace production `print` calls with structured logging | Code quality | P2 | Easy | Logging choice | [COMPLETED] Replaced production print calls with `dart:developer` logging. |
+| T36 | Add unit tests for weather, soil, recommendations, localization, and storage | Testing | P2 | Medium | T31 | [PARTIALLY COMPLETED] Added soil validation, weather parsing, and daily aggregation tests; recommendations, localization, and storage tests remain. |
+| T37 | Add widget tests for auth, routing, profile, and async states | Testing | P2 | Medium | T08/T22 | [PARTIALLY COMPLETED] Startup recovery smoke test exists; auth, routing, profile, and async-state tests remain. |
+| T38 | Add Firebase/device permission integration tests | Testing | P2 | Hard | T03/T26 | [NOT STARTED] |
+| T39 | Lazy-load feature work and reduce chat rebuild scope | Performance | P2 | Medium | T30 | [PARTIALLY COMPLETED] Main shell now uses PageView.builder; chat composer/message rebuild separation remains. |
+| T40 | Add image resizing, caching, cleanup, and request cancellation | Performance/AI | P2 | Medium | T06 | [PARTIALLY COMPLETED] Image picker resizing exists; caching, cleanup, and cancellation remain. |
+| T41 | Add offline/stale caching with visible status | Performance/Product | P2 | Hard | T19/T31 | [PARTIALLY COMPLETED] Weather cache and stale metadata exist; visible stale badge and broader offline cache remain. |
+| T42 | Add user history for scans, soil, advice, and recommendations | Product/Data | P2 | Hard | T03/T31 | [NOT STARTED] |
+| T43 | Add crop/location/season personalization | Product | P3 | Medium | T42 | [NOT STARTED] |
+| T44 | Add notification scheduling and actionable alerts | Product | P3 | Hard | T24/T42 | [NOT STARTED] |
+| T45 | Improve splash, launcher, branding, and web metadata | UI/Platform | P3 | Easy | Platform decision | [PARTIALLY COMPLETED] Web title and description were updated; native branding/platform review remains. |
+| T46 | Add analytics/crash monitoring with privacy controls | Operations | P3 | Medium | Privacy review | [NOT STARTED] |
 
 # 14. Recommended Development Order
 

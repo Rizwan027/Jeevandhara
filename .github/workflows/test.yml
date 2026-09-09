@@ -12,25 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: subosito/flutter-action@v2
         with:
-          node-version: '22'
+          flutter-version: '3.35.2'
+          channel: stable
+          cache: true
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - name: Get Flutter dependencies
+        run: flutter pub get
 
-      - name: Install Python deps for correctness checks
-        run: pip install pandas
+      - name: Analyze Flutter project
+        run: flutter analyze --no-pub
 
-      - name: Install MCP deps
-        run: npm install --prefix ponytail-mcp
-
-      - name: Check rule copies
-        run: node scripts/check-rule-copies.js
-
-      - name: Check version consistency
-        run: node scripts/check-versions.js
-
-      - name: Run tests
-        run: npm test
+      - name: Run Flutter tests
+        run: flutter test --no-pub

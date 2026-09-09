@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/main_navigation.dart';
 
@@ -20,22 +22,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       {
         'icon': Icons.eco,
         'title': AppLocalizations.of(context)!.getText('onboarding1_title'),
-        'description': AppLocalizations.of(context)!.getText('onboarding1_desc'),
+        'description': AppLocalizations.of(
+          context,
+        )!.getText('onboarding1_desc'),
       },
       {
         'icon': Icons.analytics,
         'title': AppLocalizations.of(context)!.getText('onboarding2_title'),
-        'description': AppLocalizations.of(context)!.getText('onboarding2_desc'),
+        'description': AppLocalizations.of(
+          context,
+        )!.getText('onboarding2_desc'),
       },
       {
         'icon': Icons.notifications_active,
         'title': AppLocalizations.of(context)!.getText('onboarding3_title'),
-        'description': AppLocalizations.of(context)!.getText('onboarding3_desc'),
+        'description': AppLocalizations.of(
+          context,
+        )!.getText('onboarding3_desc'),
       },
     ];
   }
 
-  void _onNext() {
+  Future<void> _onNext() async {
     final pages = _getPages(context);
     if (_currentPage < pages.length - 1) {
       _pageController.nextPage(
@@ -43,6 +51,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('onboarding_complete_${user.uid}', true);
+      }
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MainNavigation()),
@@ -53,7 +67,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = _getPages(context);
-    
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -75,14 +89,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     },
                     child: Text(
                       AppLocalizations.of(context)!.getText('skip'),
-                      style: TextStyle(
-                        color: Color(0xFF4CAF50),
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(color: Color(0xFF4CAF50), fontSize: 16),
                     ),
                   ),
                 ),
-              
+
               // Page view
               Expanded(
                 child: PageView.builder(
@@ -98,7 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                 ),
               ),
-              
+
               // Page indicators
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -108,7 +119,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Next/Get Started button
               SizedBox(
                 width: double.infinity,
@@ -122,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   child: Text(
-                    _currentPage == pages.length - 1 
+                    _currentPage == pages.length - 1
                         ? AppLocalizations.of(context)!.getText('getStarted')
                         : AppLocalizations.of(context)!.getText('next'),
                     style: const TextStyle(
@@ -134,7 +145,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Back button (only show if not on first page)
               if (_currentPage > 0)
                 TextButton(
@@ -146,10 +157,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                   child: Text(
                     AppLocalizations.of(context)!.getText('back'),
-                    style: TextStyle(
-                      color: Color(0xFF4CAF50),
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Color(0xFF4CAF50), fontSize: 16),
                   ),
                 )
               else
@@ -159,10 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                   child: Text(
                     AppLocalizations.of(context)!.getText('changeLanguage'),
-                    style: TextStyle(
-                      color: Color(0xFF4CAF50),
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Color(0xFF4CAF50), fontSize: 16),
                   ),
                 ),
             ],

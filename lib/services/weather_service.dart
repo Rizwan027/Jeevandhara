@@ -1,13 +1,12 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'dart:developer' as developer;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WeatherService {
-  static const String _apiKey =
-      '9504d3db9f8d098b58292d89bd29f882'; // Replace with your OpenWeatherMap API key
-  static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
-
+  static const _cachedWeatherKey = 'weather_cache';
+  static const _cachedForecastKey = 'weather_forecast_cache';
   // Get current location
   Future<Position?> getCurrentLocation() async {
     try {
@@ -27,7 +26,7 @@ class WeatherService {
         desiredAccuracy: LocationAccuracy.high,
       );
     } catch (e) {
-      print('Error getting location: $e');
+      developer.log('Error getting location', error: e, name: 'WeatherService');
       return null;
     }
   }
@@ -48,60 +47,76 @@ class WeatherService {
 
   // Get current weather
   Future<WeatherData?> getCurrentWeather() async {
-    try {
-      final position = await getCurrentLocation();
-      if (position == null) {
-        return _getFallbackWeather();
-      }
-
-      final url =
-          '$_baseUrl/weather?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric';
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final cityName = await getCityName(
-          position.latitude,
-          position.longitude,
-        );
-
-        return WeatherData.fromJson(data, cityName);
-      } else {
-        return _getFallbackWeather();
-      }
-    } catch (e) {
-      print('Weather API Error: $e');
-      return _getFallbackWeather();
-    }
+    return null;
   }
 
   // Get weather forecast (5 days)
   Future<List<WeatherForecast>> getWeatherForecast() async {
+    return const <WeatherForecast>[];
+  }
+
+  Future<void> cacheWeather(
+    WeatherData weather,
+    List<WeatherForecast> forecast,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_cachedWeatherKey, jsonEncode(weather.toJson()));
+    await prefs.setString(
+      _cachedForecastKey,
+      jsonEncode(forecast.map((item) => item.toJson()).toList()),
+    );
+    await saveCacheTimestamp();
+  }
+
+  Future<CachedWeather?> getCachedWeather() async {
+    final prefs = await SharedPreferences.getInstance();
+    final weatherJson = prefs.getString(_cachedWeatherKey);
+    final forecastJson = prefs.getString(_cachedForecastKey);
+    if (weatherJson == null || forecastJson == null) return null;
     try {
-      final position = await getCurrentLocation();
-      if (position == null) {
-        return _getFallbackForecast();
-      }
-
-      final url =
-          '$_baseUrl/forecast?lat=${position.latitude}&lon=${position.longitude}&appid=$_apiKey&units=metric';
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> forecasts = data['list'];
-
-        return forecasts
-            .take(5)
-            .map((forecast) => WeatherForecast.fromJson(forecast))
-            .toList();
-      } else {
-        return _getFallbackForecast();
-      }
-    } catch (e) {
-      print('Forecast API Error: $e');
-      return _getFallbackForecast();
+      final weather = WeatherData.fromCache(jsonDecode(weatherJson));
+      final forecast = (jsonDecode(forecastJson) as List)
+          .map((item) => WeatherForecast.fromCache(item))
+          .toList();
+      return CachedWeather(
+        weather: weather,
+        forecast: forecast,
+        savedAt: DateTime.fromMillisecondsSinceEpoch(
+          prefs.getInt('${_cachedWeatherKey}_timestamp') ?? 0,
+        ),
+      );
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
     }
+  }
+
+  Future<void> saveCacheTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      '${_cachedWeatherKey}_timestamp',
+      DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  List<WeatherForecast> aggregateDailyForecasts(List<WeatherForecast> entries) {
+    final byDay = <DateTime, List<WeatherForecast>>{};
+    for (final entry in entries) {
+      final day = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      byDay.putIfAbsent(day, () => []).add(entry);
+    }
+    return byDay.entries.map((day) {
+      final values = day.value;
+      final average =
+          values.fold<double>(0, (sum, item) => sum + item.temperature) /
+          values.length;
+      return WeatherForecast(
+        date: day.key,
+        temperature: average,
+        description: values.first.description,
+      );
+    }).toList();
   }
 
   // Generate weather alerts for farming
@@ -187,48 +202,6 @@ class WeatherService {
 
     return alerts;
   }
-
-  // Fallback data when API is unavailable
-  WeatherData _getFallbackWeather() {
-    return WeatherData(
-      temperature: 28.0,
-      humidity: 65,
-      windSpeed: 12.0,
-      description: 'Partly Cloudy',
-      cityName: 'Your Location',
-      icon: '02d',
-    );
-  }
-
-  List<WeatherForecast> _getFallbackForecast() {
-    return [
-      WeatherForecast(
-        date: DateTime.now().add(const Duration(days: 1)),
-        temperature: 29.0,
-        description: 'Sunny',
-      ),
-      WeatherForecast(
-        date: DateTime.now().add(const Duration(days: 2)),
-        temperature: 26.0,
-        description: 'Light Rain',
-      ),
-      WeatherForecast(
-        date: DateTime.now().add(const Duration(days: 3)),
-        temperature: 31.0,
-        description: 'Partly Cloudy',
-      ),
-      WeatherForecast(
-        date: DateTime.now().add(const Duration(days: 4)),
-        temperature: 28.0,
-        description: 'Cloudy',
-      ),
-      WeatherForecast(
-        date: DateTime.now().add(const Duration(days: 5)),
-        temperature: 30.0,
-        description: 'Sunny',
-      ),
-    ];
-  }
 }
 
 // Data models
@@ -249,14 +222,55 @@ class WeatherData {
     required this.icon,
   });
 
-  factory WeatherData.fromJson(Map<String, dynamic> json, String cityName) {
+  Map<String, dynamic> toJson() => {
+    'temperature': temperature,
+    'humidity': humidity,
+    'windSpeed': windSpeed,
+    'description': description,
+    'cityName': cityName,
+    'icon': icon,
+  };
+
+  factory WeatherData.fromCache(dynamic json) {
+    if (json is! Map) throw const FormatException('Invalid cached weather.');
     return WeatherData(
-      temperature: json['main']['temp'].toDouble(),
-      humidity: json['main']['humidity'],
-      windSpeed: json['wind']['speed'].toDouble() * 3.6, // Convert m/s to km/h
-      description: json['weather'][0]['description'],
+      temperature: (json['temperature'] as num).toDouble(),
+      humidity: (json['humidity'] as num).toInt(),
+      windSpeed: (json['windSpeed'] as num).toDouble(),
+      description: json['description'] as String,
+      cityName: json['cityName'] as String,
+      icon: json['icon'] as String,
+    );
+  }
+
+  factory WeatherData.fromJson(Map<String, dynamic> json, String cityName) {
+    final main = json['main'];
+    final wind = json['wind'];
+    final weather = json['weather'];
+    if (main is! Map || wind is! Map || weather is! List || weather.isEmpty) {
+      throw const FormatException('Invalid weather response.');
+    }
+    final temperature = (main['temp'] as num?)?.toDouble();
+    final humidity = main['humidity'] as num?;
+    final windSpeed = (wind['speed'] as num?)?.toDouble();
+    final description = weather.first is Map
+        ? weather.first['description']
+        : null;
+    final icon = weather.first is Map ? weather.first['icon'] : null;
+    if (temperature == null ||
+        humidity == null ||
+        windSpeed == null ||
+        description is! String ||
+        icon is! String) {
+      throw const FormatException('Invalid weather values.');
+    }
+    return WeatherData(
+      temperature: temperature,
+      humidity: humidity.toInt(),
+      windSpeed: windSpeed * 3.6,
+      description: description,
       cityName: cityName,
-      icon: json['weather'][0]['icon'],
+      icon: icon,
     );
   }
 }
@@ -272,13 +286,58 @@ class WeatherForecast {
     required this.description,
   });
 
-  factory WeatherForecast.fromJson(Map<String, dynamic> json) {
+  Map<String, dynamic> toJson() => {
+    'date': date.toIso8601String(),
+    'temperature': temperature,
+    'description': description,
+  };
+
+  factory WeatherForecast.fromCache(dynamic json) {
+    if (json is! Map) throw const FormatException('Invalid cached forecast.');
     return WeatherForecast(
-      date: DateTime.fromMillisecondsSinceEpoch(json['dt'] * 1000),
-      temperature: json['main']['temp'].toDouble(),
-      description: json['weather'][0]['description'],
+      date: DateTime.parse(json['date'] as String),
+      temperature: (json['temperature'] as num).toDouble(),
+      description: json['description'] as String,
     );
   }
+
+  factory WeatherForecast.fromJson(Map<String, dynamic> json) {
+    final main = json['main'];
+    final weather = json['weather'];
+    final timestamp = json['dt'];
+    if (main is! Map ||
+        weather is! List ||
+        weather.isEmpty ||
+        timestamp is! num) {
+      throw const FormatException('Invalid forecast response.');
+    }
+    final temperature = (main['temp'] as num?)?.toDouble();
+    final description = weather.first is Map
+        ? weather.first['description']
+        : null;
+    if (temperature == null || description is! String) {
+      throw const FormatException('Invalid forecast values.');
+    }
+    return WeatherForecast(
+      date: DateTime.fromMillisecondsSinceEpoch(timestamp.toInt() * 1000),
+      temperature: temperature,
+      description: description,
+    );
+  }
+}
+
+class CachedWeather {
+  final WeatherData weather;
+  final List<WeatherForecast> forecast;
+  final DateTime savedAt;
+
+  const CachedWeather({
+    required this.weather,
+    required this.forecast,
+    required this.savedAt,
+  });
+
+  bool get isStale => DateTime.now().difference(savedAt).inHours >= 1;
 }
 
 class WeatherAlert {

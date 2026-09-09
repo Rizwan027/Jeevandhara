@@ -2,19 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'localization/app_localizations.dart';
 import 'screens/auth_screen.dart';
+import 'screens/input_data/input_data_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/settings_screen.dart';
 import 'widgets/main_navigation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const MyApp());
+  Object? firebaseError;
+  try {
+    await Firebase.initializeApp();
+  } catch (error) {
+    firebaseError = error;
+  }
+  runApp(MyApp(firebaseError: firebaseError));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final Object? firebaseError;
+
+  const MyApp({super.key, this.firebaseError});
 
   @override
   State<MyApp> createState() => MyAppState();
@@ -25,6 +35,31 @@ class MyApp extends StatefulWidget {
 
 class MyAppState extends State<MyApp> {
   Locale _locale = const Locale('en', '');
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreLanguage();
+  }
+
+  Future<void> _restoreLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final language = prefs.getString('selected_language');
+    if (!mounted || language == null) return;
+    setLocale(_localeForLanguage(language));
+  }
+
+  Locale _localeForLanguage(String language) {
+    const locales = {
+      'Hindi': Locale('hi'),
+      'Telugu': Locale('te'),
+      'Tamil': Locale('ta'),
+      'Bengali': Locale('bn'),
+      'Marathi': Locale('mr'),
+      'English': Locale('en'),
+    };
+    return locales[language] ?? const Locale('en');
+  }
 
   void setLocale(Locale newLocale) {
     setState(() {
@@ -57,21 +92,27 @@ class MyAppState extends State<MyApp> {
         Locale('bn', ''), // Bengali
         Locale('mr', ''), // Marathi
       ],
-      home: const AuthGate(),
+      home: AuthGate(firebaseError: widget.firebaseError),
       routes: {
         '/home': (context) => const MainNavigation(),
         '/main': (context) => const MainNavigation(),
+        '/input_data': (context) => const InputDataScreen(),
+        '/settings': (context) => const SettingsScreen(),
       },
     );
   }
-
 }
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+  final Object? firebaseError;
+
+  const AuthGate({super.key, this.firebaseError});
 
   @override
   Widget build(BuildContext context) {
+    if (firebaseError != null) {
+      return FirebaseFailureScreen(error: firebaseError!);
+    }
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -80,10 +121,73 @@ class AuthGate extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        return snapshot.hasData
-            ? const LanguageSelectionScreen()
-            : const AuthScreen();
+        if (!snapshot.hasData) return const AuthScreen();
+        final user = snapshot.data!;
+        SharedPreferences.getInstance().then(
+          (prefs) => prefs.setString('active_user_id', user.uid),
+        );
+        return FutureBuilder<bool>(
+          future: SharedPreferences.getInstance().then(
+            (prefs) =>
+                prefs.getBool('onboarding_complete_${user.uid}') ?? false,
+          ),
+          builder: (context, onboardingSnapshot) {
+            if (!onboardingSnapshot.hasData) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return onboardingSnapshot.data!
+                ? const MainNavigation()
+                : const LanguageSelectionScreen();
+          },
+        );
       },
+    );
+  }
+}
+
+class FirebaseFailureScreen extends StatelessWidget {
+  final Object error;
+
+  const FirebaseFailureScreen({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 56),
+              const SizedBox(height: 16),
+              const Text(
+                'Jeevandhara could not start',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Firebase configuration or connectivity is unavailable. Check your connection and try again.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => main(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.runtimeType.toString(),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -225,6 +329,12 @@ class LanguageSelectionScreen extends StatelessWidget {
                                   languages[index]['name']!,
                                 );
                                 MyApp.of(context).setLocale(newLocale);
+                                SharedPreferences.getInstance().then(
+                                  (prefs) => prefs.setString(
+                                    'selected_language',
+                                    languages[index]['name']!,
+                                  ),
+                                );
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
