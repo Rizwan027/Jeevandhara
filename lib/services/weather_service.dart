@@ -2,9 +2,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:developer' as developer;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WeatherService {
+  static const _apiKey = String.fromEnvironment('OPENWEATHER_API_KEY');
+  static const _baseUrl = 'https://api.openweathermap.org/data/2.5';
   static const _cachedWeatherKey = 'weather_cache';
   static const _cachedForecastKey = 'weather_forecast_cache';
   static const _cachedLatitudeKey = 'weather_location_latitude';
@@ -12,31 +15,53 @@ class WeatherService {
   // Get current location
   Future<Position?> getCurrentLocation() async {
     try {
+      developer.log('[WEATHER] permission status check', name: 'Weather');
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        developer.log('[WEATHER] location service disabled', name: 'Weather');
+        return _getCachedLocation();
+      }
       LocationPermission permission = await Geolocator.checkPermission();
+      developer.log(
+        '[WEATHER] permission status: $permission',
+        name: 'Weather',
+      );
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
+        developer.log(
+          '[WEATHER] permission status after request: $permission',
+          name: 'Weather',
+        );
         if (permission == LocationPermission.denied) {
-          final requested = await Geolocator.requestPermission();
-          if (requested == LocationPermission.denied) {
-            return _getCachedLocation();
-          }
-          permission = requested;
+          return _getCachedLocation();
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
+        developer.log('[WEATHER] permission denied forever', name: 'Weather');
         return _getCachedLocation();
       }
 
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
+      if (!_validCoordinates(position.latitude, position.longitude)) {
+        developer.log(
+          '[WEATHER] invalid coordinates: ${position.latitude}, ${position.longitude}',
+          name: 'Weather',
+        );
+        return _getCachedLocation();
+      }
+      developer.log(
+        '[WEATHER] coordinates: ${position.latitude}, ${position.longitude}',
+        name: 'Weather',
       );
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble(_cachedLatitudeKey, position.latitude);
       await prefs.setDouble(_cachedLongitudeKey, position.longitude);
       return position;
     } catch (e) {
-      developer.log('Error getting location', error: e, name: 'WeatherService');
+      developer.log('[WEATHER] location error', error: e, name: 'Weather');
       return _getCachedLocation();
     }
   }
@@ -45,7 +70,16 @@ class WeatherService {
     final prefs = await SharedPreferences.getInstance();
     final latitude = prefs.getDouble(_cachedLatitudeKey);
     final longitude = prefs.getDouble(_cachedLongitudeKey);
-    if (latitude == null || longitude == null) return null;
+    if (latitude == null ||
+        longitude == null ||
+        !_validCoordinates(latitude, longitude)) {
+      developer.log('[WEATHER] no valid cached coordinates', name: 'Weather');
+      return null;
+    }
+    developer.log(
+      '[WEATHER] using cached coordinates: $latitude, $longitude',
+      name: 'Weather',
+    );
     return Position(
       longitude: longitude,
       latitude: latitude,
@@ -63,26 +97,135 @@ class WeatherService {
   // Get city name from coordinates
   Future<String> getCityName(double lat, double lon) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+      final placemarks = await placemarkFromCoordinates(
+        lat,
+        lon,
+      ).timeout(const Duration(seconds: 10));
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        return '${place.locality}, ${place.administrativeArea}';
+        final locality = place.locality ?? place.subAdministrativeArea;
+        final area = place.administrativeArea;
+        final name = [
+          locality,
+          area,
+        ].whereType<String>().where((value) => value.isNotEmpty).join(', ');
+        developer.log('[WEATHER] location name: $name', name: 'Weather');
+        return name.isEmpty ? 'Unknown Location' : name;
       }
       return 'Unknown Location';
     } catch (e) {
+      developer.log(
+        '[WEATHER] geocoding failed; continuing without city name',
+        error: e,
+        name: 'Weather',
+      );
       return 'Unknown Location';
     }
   }
 
   // Get current weather
   Future<WeatherData?> getCurrentWeather() async {
-    return null;
+    if (_apiKey.isEmpty) {
+      developer.log(
+        '[WEATHER] API key unavailable; pass --dart-define=OPENWEATHER_API_KEY=...',
+        name: 'Weather',
+      );
+      return null;
+    }
+    developer.log('[WEATHER] request started', name: 'Weather');
+    final position = await getCurrentLocation();
+    if (position == null) return null;
+    final cityName = await getCityName(position.latitude, position.longitude);
+    final uri = Uri.parse('$_baseUrl/weather').replace(
+      queryParameters: {
+        'lat': '${position.latitude}',
+        'lon': '${position.longitude}',
+        'appid': _apiKey,
+        'units': 'metric',
+      },
+    );
+    try {
+      developer.log(
+        '[WEATHER] API request started: ${uri.replace(queryParameters: {...uri.queryParameters, 'appid': '<redacted>'})}',
+        name: 'Weather',
+      );
+      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+      developer.log(
+        '[WEATHER] HTTP status: ${response.statusCode}',
+        name: 'Weather',
+      );
+      if (response.statusCode != 200) {
+        developer.log('[WEATHER] API error response', name: 'Weather');
+        return null;
+      }
+      final weather = WeatherData.fromJson(jsonDecode(response.body), cityName);
+      developer.log('[WEATHER] parsing succeeded', name: 'Weather');
+      final cached = await getCachedWeather();
+      await cacheWeather(weather, cached?.forecast ?? const []);
+      developer.log('[WEATHER] cache updated', name: 'Weather');
+      return weather;
+    } catch (e) {
+      developer.log(
+        '[WEATHER] current weather error',
+        error: e,
+        name: 'Weather',
+      );
+      return null;
+    }
   }
 
   // Get weather forecast (5 days)
   Future<List<WeatherForecast>> getWeatherForecast() async {
-    return const <WeatherForecast>[];
+    if (_apiKey.isEmpty) return const <WeatherForecast>[];
+    final position = await getCurrentLocation();
+    if (position == null) return const <WeatherForecast>[];
+    final uri = Uri.parse('$_baseUrl/forecast').replace(
+      queryParameters: {
+        'lat': '${position.latitude}',
+        'lon': '${position.longitude}',
+        'appid': _apiKey,
+        'units': 'metric',
+      },
+    );
+    try {
+      developer.log('[WEATHER] forecast API request started', name: 'Weather');
+      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+      developer.log(
+        '[WEATHER] forecast HTTP status: ${response.statusCode}',
+        name: 'Weather',
+      );
+      if (response.statusCode != 200) return const <WeatherForecast>[];
+      final body = jsonDecode(response.body);
+      if (body is! Map || body['list'] is! List) {
+        throw const FormatException('Invalid forecast response.');
+      }
+      final entries = (body['list'] as List)
+          .whereType<Map>()
+          .map(
+            (item) => WeatherForecast.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList();
+      final forecast = aggregateDailyForecasts(entries).take(5).toList();
+      developer.log(
+        '[WEATHER] forecast parsing succeeded: ${forecast.length} days',
+        name: 'Weather',
+      );
+      final cached = await getCachedWeather();
+      if (cached != null) await cacheWeather(cached.weather, forecast);
+      return forecast;
+    } catch (e) {
+      developer.log('[WEATHER] forecast error', error: e, name: 'Weather');
+      return const <WeatherForecast>[];
+    }
   }
+
+  static bool _validCoordinates(double latitude, double longitude) =>
+      latitude.isFinite &&
+      longitude.isFinite &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180;
 
   Future<void> cacheWeather(
     WeatherData weather,

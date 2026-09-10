@@ -101,6 +101,14 @@ void main() {
   );
 
   group('Weather models', () {
+    test(
+      'does not fabricate weather without runtime API configuration',
+      () async {
+        final weather = await WeatherService().getCurrentWeather();
+        expect(weather, isNull);
+      },
+    );
+
     test('parses valid current weather', () {
       final weather = WeatherData.fromJson({
         'main': {'temp': 28, 'humidity': 65},

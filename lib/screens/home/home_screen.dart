@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
 import '../advice/advice_screen.dart';
 import '../chat/chat_screen.dart';
-import '../scan/scan_screen.dart';
 import '../input_data/input_data_screen.dart';
 import 'home_market_section.dart';
 import '../../services/weather_service.dart';
