@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../home/home_screen.dart';
-import '../scan/scan_screen.dart';
-import '../chat/chat_screen.dart';
 import '../../services/weather_service.dart';
 import '../../services/soil_data_service.dart';
 
@@ -26,6 +23,9 @@ class _AdviceScreenState extends State<AdviceScreen>
   Map<String, dynamic>? weatherData;
   bool isLoading = true;
   List<Map<String, dynamic>> recommendedCrops = [];
+  bool weatherUnavailable = false;
+  String? loadError;
+  int _requestId = 0;
 
   @override
   void initState() {
@@ -48,6 +48,13 @@ class _AdviceScreenState extends State<AdviceScreen>
   }
 
   Future<void> _loadDataAndGenerateRecommendations() async {
+    final requestId = ++_requestId;
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        loadError = null;
+      });
+    }
     try {
       // Load soil data
       final user = FirebaseAuth.instance.currentUser;
@@ -60,30 +67,35 @@ class _AdviceScreenState extends State<AdviceScreen>
         final weatherService = WeatherService();
         final weather = await weatherService.getCurrentWeather();
         if (weather != null) {
+          weatherUnavailable = false;
           weatherData = {
             'temperature': weather.temperature,
             'humidity': weather.humidity,
             'rainfall': 800.0,
           };
         } else {
+          weatherUnavailable = true;
           weatherData = _getDefaultWeatherData();
         }
       } catch (e) {
+        weatherUnavailable = true;
         weatherData = _getDefaultWeatherData();
       }
 
       // Generate recommendations
       recommendedCrops = _generateCropRecommendations();
 
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         isLoading = false;
+        loadError = null;
       });
       _animationController.forward();
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         isLoading = false;
+        loadError = 'Unable to prepare recommendations. Please try again.';
       });
       _animationController.forward();
     }
@@ -380,6 +392,26 @@ class _AdviceScreenState extends State<AdviceScreen>
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
               ),
             )
+          : loadError != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_off, size: 48),
+                    const SizedBox(height: 12),
+                    Text(loadError!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: _loadDataAndGenerateRecommendations,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : FadeTransition(
               opacity: _fadeAnimation,
               child: SingleChildScrollView(
@@ -387,6 +419,11 @@ class _AdviceScreenState extends State<AdviceScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (weatherUnavailable)
+                      _buildTrustBanner(
+                        'Weather data unavailable. These are general reference estimates, not live weather-based advice.',
+                        Icons.info_outline,
+                      ),
                     _buildSummaryCard(),
                     const SizedBox(height: 12),
                     _buildCropRecommendations(),
@@ -398,7 +435,27 @@ class _AdviceScreenState extends State<AdviceScreen>
                 ),
               ),
             ),
-      bottomNavigationBar: widget.showBottomNav ? _buildBottomNav() : null,
+    );
+  }
+
+  Widget _buildTrustBanner(String message, IconData icon) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        border: Border.all(color: Colors.amber.shade200),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.amber.shade800),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message)),
+        ],
+      ),
     );
   }
 
@@ -827,54 +884,6 @@ class _AdviceScreenState extends State<AdviceScreen>
             }).toList(),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return BottomNavigationBar(
-      currentIndex: 1, // Advice tab
-      onTap: (index) {
-        if (index == 0) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const HomeScreen(showBottomNav: true),
-            ),
-          );
-        } else if (index == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ScanScreen(showBottomNav: true),
-            ),
-          );
-        } else if (index == 3) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ChatScreen(showBottomNav: true),
-            ),
-          );
-        }
-        // Current tab (advice) - no action needed
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF10B981),
-      unselectedItemColor: const Color(0xFF9CA3AF),
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      elevation: 8,
-      backgroundColor: Colors.white,
-      selectedFontSize: 12,
-      unselectedFontSize: 10,
-      iconSize: 22,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: 'Advice'),
-        BottomNavigationBarItem(icon: Icon(Icons.eco), label: 'Scan Crop'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
     );
   }

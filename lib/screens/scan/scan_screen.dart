@@ -4,7 +4,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import '../advice/advice_screen.dart';
-import '../home/home_screen.dart';
 import '../../services/ai_service.dart';
 
 class ScanScreen extends StatefulWidget {
@@ -26,6 +25,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   bool _isAnalyzing = false;
   File? _selectedImage;
   Map<String, dynamic>? _analysisResult;
+  int _analysisRequestId = 0;
 
   @override
   void initState() {
@@ -133,18 +133,19 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   Future<void> _analyzePlantHealth() async {
     if (_selectedImage == null) return;
     if (!mounted) return;
+    final requestId = ++_analysisRequestId;
     setState(() => _isAnalyzing = true);
 
     try {
       // Call AI service for plant health analysis
       final result = await _aiService.analyzePlantHealth(_selectedImage!.path);
-      if (!mounted) return;
+      if (!mounted || requestId != _analysisRequestId) return;
       setState(() {
         _analysisResult = result;
         _isAnalyzing = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestId != _analysisRequestId) return;
       setState(() => _isAnalyzing = false);
       _showErrorSnackBar('Analysis failed. Please try again.');
     }
@@ -162,6 +163,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   }
 
   void _resetAnalysis() {
+    _analysisRequestId++;
     setState(() {
       _analysisResult = null;
       _selectedImage = null;
@@ -322,9 +324,6 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           ),
         ),
       ),
-      bottomNavigationBar: widget.showBottomNav
-          ? _buildBottomNavigationBar(context)
-          : null,
     );
   }
 
@@ -616,6 +615,25 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             ),
           ],
 
+          if (_analysisResult?['unavailable'] == true) ...[
+            const SizedBox(height: 12),
+            Semantics(
+              container: true,
+              label: 'Expert escalation guidance',
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade200),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'For disease, pesticide, or treatment decisions, take this image to a qualified agricultural extension officer. No confidence score or diagnosis is available here.',
+                ),
+              ),
+            ),
+          ],
+
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -648,47 +666,6 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 1, // Scan tab
-      onTap: (index) {
-        if (index == 0) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const HomeScreen(showBottomNav: true),
-            ),
-          );
-        } else if (index == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AdviceScreen(showBottomNav: true),
-            ),
-          );
-        }
-        // Current tab (scan) - no action needed
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF10B981),
-      unselectedItemColor: const Color(0xFF9CA3AF),
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      elevation: 8,
-      backgroundColor: Colors.white,
-      selectedFontSize: 12,
-      unselectedFontSize: 10,
-      iconSize: 22,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.eco), label: 'Scan Crop'),
-        BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: 'Advice'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-      ],
     );
   }
 }

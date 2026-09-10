@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class WeatherService {
   static const _cachedWeatherKey = 'weather_cache';
   static const _cachedForecastKey = 'weather_forecast_cache';
+  static const _cachedLatitudeKey = 'weather_location_latitude';
+  static const _cachedLongitudeKey = 'weather_location_longitude';
   // Get current location
   Future<Position?> getCurrentLocation() async {
     try {
@@ -14,21 +16,48 @@ class WeatherService {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          return null;
+          final requested = await Geolocator.requestPermission();
+          if (requested == LocationPermission.denied) {
+            return _getCachedLocation();
+          }
+          permission = requested;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        return null;
+        return _getCachedLocation();
       }
 
-      return await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_cachedLatitudeKey, position.latitude);
+      await prefs.setDouble(_cachedLongitudeKey, position.longitude);
+      return position;
     } catch (e) {
       developer.log('Error getting location', error: e, name: 'WeatherService');
-      return null;
+      return _getCachedLocation();
     }
+  }
+
+  Future<Position?> _getCachedLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final latitude = prefs.getDouble(_cachedLatitudeKey);
+    final longitude = prefs.getDouble(_cachedLongitudeKey);
+    if (latitude == null || longitude == null) return null;
+    return Position(
+      longitude: longitude,
+      latitude: latitude,
+      timestamp: DateTime.now(),
+      accuracy: 0,
+      altitude: 0,
+      altitudeAccuracy: 0,
+      heading: 0,
+      headingAccuracy: 0,
+      speed: 0,
+      speedAccuracy: 0,
+    );
   }
 
   // Get city name from coordinates

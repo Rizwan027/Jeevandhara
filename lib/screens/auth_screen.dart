@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -28,14 +30,21 @@ class _AuthScreenState extends State<AuthScreen> {
       final auth = FirebaseAuth.instance;
 
       if (_isLogin) {
-        await auth.signInWithEmailAndPassword(email: email, password: password);
+        developer.log('[AUTH] sign-in started', name: 'Auth');
+        await auth
+            .signInWithEmailAndPassword(email: email, password: password)
+            .timeout(const Duration(seconds: 20));
+        developer.log('[AUTH] Firebase sign-in succeeded', name: 'Auth');
+        if (mounted) setState(() => _isLoading = false);
       } else {
-        final credential = await auth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        developer.log('[AUTH] sign-up started', name: 'Auth');
+        final credential = await auth
+            .createUserWithEmailAndPassword(email: email, password: password)
+            .timeout(const Duration(seconds: 20));
+        developer.log('[AUTH] Firebase sign-up succeeded', name: 'Auth');
         var profileSaved = true;
         try {
+          developer.log('[AUTH] profile provisioning started', name: 'Auth');
           await FirebaseFirestore.instance
               .collection('users')
               .doc(credential.user!.uid)
@@ -43,15 +52,36 @@ class _AuthScreenState extends State<AuthScreen> {
                 'name': _nameController.text.trim(),
                 'email': email,
                 'createdAt': FieldValue.serverTimestamp(),
-              });
+              })
+              .timeout(const Duration(seconds: 15));
+          developer.log('[AUTH] profile provisioning succeeded', name: 'Auth');
+        } on TimeoutException catch (error) {
+          developer.log(
+            '[AUTH] profile provisioning failed: $error',
+            error: error,
+            name: 'Auth',
+          );
+          profileSaved = false;
         } on FirebaseException {
+          developer.log('[AUTH] profile provisioning failed', name: 'Auth');
           profileSaved = false;
         }
 
         var verificationSent = true;
         try {
-          await credential.user!.sendEmailVerification();
+          await credential.user!.sendEmailVerification().timeout(
+            const Duration(seconds: 15),
+          );
+          developer.log('[AUTH] verification setup succeeded', name: 'Auth');
+        } on TimeoutException catch (error) {
+          developer.log(
+            '[AUTH] verification setup failed: $error',
+            error: error,
+            name: 'Auth',
+          );
+          verificationSent = false;
         } on FirebaseAuthException {
+          developer.log('[AUTH] verification setup failed', name: 'Auth');
           verificationSent = false;
         }
 
@@ -75,12 +105,32 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_authErrorMessage(error))));
+      developer.log(
+        '[AUTH] Firebase auth failed: ${error.code}',
+        error: error,
+        name: 'Auth',
+      );
+    } on TimeoutException {
+      developer.log('[AUTH] auth operation timed out', name: 'Auth');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Sign-in timed out. Check your connection and try again.',
+          ),
+        ),
+      );
     } on FirebaseException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error.message ?? 'Unable to save your profile.'),
         ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to sign in. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -193,6 +243,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
+                          tooltip: _obscurePassword
+                              ? 'Show password'
+                              : 'Hide password',
                           onPressed: () => setState(
                             () => _obscurePassword = !_obscurePassword,
                           ),

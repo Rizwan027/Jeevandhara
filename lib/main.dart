@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -116,6 +117,10 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        developer.log(
+          '[AUTH] auth state changed: ${snapshot.connectionState}, user=${snapshot.data?.uid}',
+          name: 'Auth',
+        );
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -123,20 +128,49 @@ class AuthGate extends StatelessWidget {
         }
         if (!snapshot.hasData) return const AuthScreen();
         final user = snapshot.data!;
-        SharedPreferences.getInstance().then(
-          (prefs) => prefs.setString('active_user_id', user.uid),
+        developer.log(
+          '[AUTH] profile loading started for ${user.uid}',
+          name: 'Auth',
         );
+        SharedPreferences.getInstance()
+            .timeout(const Duration(seconds: 10))
+            .then((prefs) => prefs.setString('active_user_id', user.uid))
+            .catchError((error) {
+              developer.log(
+                '[AUTH] profile loading failed: $error',
+                error: error,
+                name: 'Auth',
+              );
+              return false;
+            });
         return FutureBuilder<bool>(
-          future: SharedPreferences.getInstance().then(
-            (prefs) =>
-                prefs.getBool('onboarding_complete_${user.uid}') ?? false,
-          ),
+          future: SharedPreferences.getInstance()
+              .then(
+                (prefs) =>
+                    prefs.getBool('onboarding_complete_${user.uid}') ?? false,
+              )
+              .timeout(const Duration(seconds: 10))
+              .catchError((error) {
+                developer.log(
+                  '[AUTH] profile loading failed; using onboarding default: $error',
+                  error: error,
+                  name: 'Auth',
+                );
+                return false;
+              }),
           builder: (context, onboardingSnapshot) {
             if (!onboardingSnapshot.hasData) {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );
             }
+            final destination = onboardingSnapshot.data!
+                ? 'authenticated shell'
+                : 'language selection';
+            developer.log(
+              '[AUTH] AuthGate transition: $destination',
+              name: 'Auth',
+            );
             return onboardingSnapshot.data!
                 ? const MainNavigation()
                 : const LanguageSelectionScreen();

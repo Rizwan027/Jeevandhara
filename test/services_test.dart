@@ -1,6 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:jeevandhara/services/soil_data_service.dart';
 import 'package:jeevandhara/services/weather_service.dart';
+import 'package:jeevandhara/services/ai_service.dart';
+import 'package:jeevandhara/localization/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('SoilDataService', () {
@@ -40,7 +44,61 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('stores data per user and clears its timestamp', () async {
+      SharedPreferences.setMockInitialValues({});
+      final soilData = {
+        'ph': 6.5,
+        'moisture': 65.0,
+        'temperature': 28.0,
+        'nitrogen': 78.0,
+        'phosphorus': 82.0,
+        'potassium': 71.0,
+      };
+
+      await SoilDataService.saveSoilData(soilData, userId: 'user-a');
+
+      expect(await SoilDataService.getSoilData(userId: 'user-a'), soilData);
+      expect(await SoilDataService.getSoilData(userId: 'user-b'), isNull);
+      expect(await SoilDataService.getLastUpdated(userId: 'user-a'), isNotNull);
+
+      await SoilDataService.clearSoilData(userId: 'user-a');
+      expect(await SoilDataService.getSoilData(userId: 'user-a'), isNull);
+      expect(await SoilDataService.getLastUpdated(userId: 'user-a'), isNull);
+    });
   });
+
+  test('crop diagnosis remains explicitly unavailable', () async {
+    final result = await AIService().analyzePlantHealth('plant.jpg');
+
+    expect(result['unavailable'], isTrue);
+    expect(result['error'], isTrue);
+    expect(result['confidence'], 0.0);
+  });
+
+  test(
+    'crop recommendations use an explicit fallback when AI is unavailable',
+    () async {
+      final recommendation = await AIService().getCropRecommendations(
+        soilData: {
+          'ph': 6.5,
+          'moisture': 65.0,
+          'temperature': 28.0,
+          'nitrogen': 78.0,
+          'phosphorus': 82.0,
+          'potassium': 71.0,
+        },
+        weatherData: {
+          'temperature': 28.0,
+          'humidity': 65,
+          'description': 'Clear',
+        },
+      );
+
+      expect(recommendation.recommendedCrops, isNotEmpty);
+      expect(recommendation.aiRecommendation, contains('Fallback'));
+    },
+  );
 
   group('Weather models', () {
     test('parses valid current weather', () {
@@ -77,5 +135,18 @@ void main() {
     expect(aggregated, hasLength(1));
     expect(aggregated.single.temperature, 25);
     expect(aggregated.single.date, DateTime(2026, 1, 2));
+  });
+
+  test('supported locales provide core localized labels', () async {
+    for (final language in ['en', 'hi', 'mr', 'te', 'ta', 'bn']) {
+      final localization = await AppLocalizations.delegate.load(
+        Locale(language),
+      );
+      expect(localization.getText('home'), isNot('home'));
+      expect(
+        localization.getText('weather_forecast'),
+        isNot('weather_forecast'),
+      );
+    }
   });
 }

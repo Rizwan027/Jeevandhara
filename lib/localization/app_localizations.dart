@@ -39,15 +39,18 @@ class _AppLocalizationsDelegate
         'getStarted': 'Get Started',
         'changeLanguage': 'Change Language',
         'voiceTutorial': 'Voice Tutorial Available',
-        
+
         // Onboarding screens
         'onboarding1_title': 'Smart Crop Recommendations',
-        'onboarding1_desc': 'Get AI-powered suggestions for the best crops based on your soil and climate.',
+        'onboarding1_desc':
+            'Get AI-powered suggestions for the best crops based on your soil and climate.',
         'onboarding2_title': 'Real-time Analytics',
-        'onboarding2_desc': 'Monitor your farm\'s performance with real-time data and analytics.',
+        'onboarding2_desc':
+            'Monitor your farm\'s performance with real-time data and analytics.',
         'onboarding3_title': 'Smart Alerts',
-        'onboarding3_desc': 'Get instant notifications about weather changes and crop health.',
-        
+        'onboarding3_desc':
+            'Get instant notifications about weather changes and crop health.',
+
         // Home screen
         'good_morning': 'Good Morning!',
         'good_afternoon': 'Good Afternoon!',
@@ -69,7 +72,8 @@ class _AppLocalizationsDelegate
         'expected_this_season': 'Expected this season',
         'humidity': 'Humidity',
         'rice_price_alert': 'Rice prices increased in market',
-        'rice_price_desc': 'Rice prices have increased by 8% in the local market.',
+        'rice_price_desc':
+            'Rice prices have increased by 8% in the local market.',
         'urgent': 'URGENT',
         'ph_level': 'pH Level: 6.5',
         'optimal_crops': 'Optimal for most crops',
@@ -87,6 +91,17 @@ class _AppLocalizationsDelegate
         'fair': 'Fair',
         'live': 'LIVE',
         'view_detailed_analysis': 'View Detailed Analysis',
+        'settings': 'Settings',
+        'edit_name': 'Edit name',
+        'email_address': 'Email address',
+        'account_status': 'Account status',
+        'sign_out': 'Sign out',
+        'delete_account': 'Delete account',
+        'choose_language': 'Choose language',
+        'view_onboarding': 'View onboarding again',
+        'language_updated': 'Language updated.',
+        'camera_permission_required': 'Camera Permission Required',
+        'open_settings': 'Open Settings', 'cancel': 'Cancel', 'save': 'Save',
       },
       'hi': {
         'appTitle': 'स्मार्टएग्री सलाहकार',
@@ -98,12 +113,15 @@ class _AppLocalizationsDelegate
         'changeLanguage': 'भाषा बदलें',
         'voiceTutorial': 'वॉइस ट्यूटोरियल उपलब्ध',
         'onboarding1_title': 'स्मार्ट फसल सिफारिशें',
-        'onboarding1_desc': 'अपनी मिट्टी और जलवायु के आधार पर सर्वोत्तम फसलों के लिए एआई-संचालित सुझाव प्राप्त करें।',
+        'onboarding1_desc':
+            'अपनी मिट्टी और जलवायु के आधार पर सर्वोत्तम फसलों के लिए एआई-संचालित सुझाव प्राप्त करें।',
         'onboarding2_title': 'रीयल-टाइम विश्लेषण',
-        'onboarding2_desc': 'रीयल-टाइम डेटा और विश्लेषण के साथ अपने खेत के प्रदर्शन की निगरानी करें।',
+        'onboarding2_desc':
+            'रीयल-टाइम डेटा और विश्लेषण के साथ अपने खेत के प्रदर्शन की निगरानी करें।',
         'onboarding3_title': 'स्मार्ट अलर्ट',
-        'onboarding3_desc': 'मौसम परिवर्तन और फसल स्वास्थ्य के बारे में त्वरित सूचनाएं प्राप्त करें।',
-        
+        'onboarding3_desc':
+            'मौसम परिवर्तन और फसल स्वास्थ्य के बारे में त्वरित सूचनाएं प्राप्त करें।',
+
         // Home screen
         'good_morning': 'सुप्रभात!',
         'good_afternoon': 'नमस्ते!',
@@ -125,7 +143,8 @@ class _AppLocalizationsDelegate
         'expected_this_season': 'इस सीजन की अपेक्षा',
         'humidity': 'आर्द्रता',
         'rice_price_alert': 'बाजार में चावल की कीमतें बढ़ीं',
-        'rice_price_desc': 'स्थानीय बाजार में चावल की कीमतों में 8% की वृद्धि हुई है।',
+        'rice_price_desc':
+            'स्थानीय बाजार में चावल की कीमतों में 8% की वृद्धि हुई है।',
         'urgent': 'जरूरी',
         'ph_level': 'पीएच स्तर: 6.5',
         'optimal_crops': 'अधिकांश फसलों के लिए आदर्श',
@@ -143,6 +162,19 @@ class _AppLocalizationsDelegate
         'fair': 'ठीक',
         'live': 'लाइव',
         'view_detailed_analysis': 'विस्तृत विश्लेषण देखें',
+        'settings': 'सेटिंग्स',
+        'edit_name': 'नाम बदलें',
+        'email_address': 'ईमेल पता',
+        'account_status': 'खाता स्थिति',
+        'sign_out': 'साइन आउट',
+        'delete_account': 'खाता हटाएं',
+        'choose_language': 'भाषा चुनें',
+        'view_onboarding': 'ऑनबोर्डिंग फिर देखें',
+        'language_updated': 'भाषा अपडेट हो गई।',
+        'camera_permission_required': 'कैमरा अनुमति आवश्यक है',
+        'open_settings': 'सेटिंग्स खोलें',
+        'cancel': 'रद्द करें',
+        'save': 'सहेजें',
       },
       'bn': {
         'appTitle': 'স্মার্টএগ্রি উপদেষ্টা',
@@ -154,12 +186,15 @@ class _AppLocalizationsDelegate
         'changeLanguage': 'ভাষা পরিবর্তন করুন',
         'voiceTutorial': 'ভয়েস টিউটোরিয়াল উপলব্ধ',
         'onboarding1_title': 'স্মার্ট ফসলের সুপারিশ',
-        'onboarding1_desc': 'আপনার মাটি এবং জলবায়ু ভিত্তি করে সেরা ফসলের জন্য AI-চালিত পরামর্শ পান।',
+        'onboarding1_desc':
+            'আপনার মাটি এবং জলবায়ু ভিত্তি করে সেরা ফসলের জন্য AI-চালিত পরামর্শ পান।',
         'onboarding2_title': 'রিয়েল-টাইম বিশ্লেষণ',
-        'onboarding2_desc': 'রিয়েল-টাইম ডেটা এবং বিশ্লেষণ দিয়ে আপনার খামারের কর্মক্ষমতা নিরীক্ষণ করুন।',
+        'onboarding2_desc':
+            'রিয়েল-টাইম ডেটা এবং বিশ্লেষণ দিয়ে আপনার খামারের কর্মক্ষমতা নিরীক্ষণ করুন।',
         'onboarding3_title': 'স্মার্ট সতর্কতা',
-        'onboarding3_desc': 'আবহাওয়া পরিবর্তন এবং ফসলের স্বাস্থ্য সম্পর্কে তাত্ক্ষণিক বিজ্ঞপ্তি পান।',
-        
+        'onboarding3_desc':
+            'আবহাওয়া পরিবর্তন এবং ফসলের স্বাস্থ্য সম্পর্কে তাত্ক্ষণিক বিজ্ঞপ্তি পান।',
+
         // Home screen
         'good_morning': 'সুপ্রভাত!',
         'good_afternoon': 'শুভ বিকেল!',
@@ -199,6 +234,19 @@ class _AppLocalizationsDelegate
         'fair': 'ঠিক আছে',
         'live': 'লাইভ',
         'view_detailed_analysis': 'বিস্তারিত বিশ্লেষণ দেখুন',
+        'settings': 'সেটিংস',
+        'edit_name': 'নাম সম্পাদনা করুন',
+        'email_address': 'ইমেল ঠিকানা',
+        'account_status': 'অ্যাকাউন্টের অবস্থা',
+        'sign_out': 'সাইন আউট',
+        'delete_account': 'অ্যাকাউন্ট মুছুন',
+        'choose_language': 'ভাষা নির্বাচন করুন',
+        'view_onboarding': 'অনবোর্ডিং আবার দেখুন',
+        'language_updated': 'ভাষা আপডেট হয়েছে।',
+        'camera_permission_required': 'ক্যামেরার অনুমতি প্রয়োজন',
+        'open_settings': 'সেটিংস খুলুন',
+        'cancel': 'বাতিল',
+        'save': 'সংরক্ষণ করুন',
       },
       'te': {
         'appTitle': 'స్మార్ట్ అగ్రీ సలహాదారు',
@@ -210,12 +258,15 @@ class _AppLocalizationsDelegate
         'changeLanguage': 'భాష మార్చు',
         'voiceTutorial': 'వాయిస్ ట్యుటోరియల్ అందుబాటులో ఉంది',
         'onboarding1_title': 'స్మార్ట్ పంట సిఫార్సులు',
-        'onboarding1_desc': 'మీ నేల మరియు వాతావరణం ఆధారంగా ఉత్తమ పంటల కోసం AI-ఆధారిత సూచనలను పొందండి.',
+        'onboarding1_desc':
+            'మీ నేల మరియు వాతావరణం ఆధారంగా ఉత్తమ పంటల కోసం AI-ఆధారిత సూచనలను పొందండి.',
         'onboarding2_title': 'రియల్-టైమ్ విశ్లేషణ',
-        'onboarding2_desc': 'రియల్-టైమ్ డేటా మరియు విశ్లేషణతో మీ వ్యవసాయ భూమి పనితీరును పర్యవేక్షించండి.',
+        'onboarding2_desc':
+            'రియల్-టైమ్ డేటా మరియు విశ్లేషణతో మీ వ్యవసాయ భూమి పనితీరును పర్యవేక్షించండి.',
         'onboarding3_title': 'స్మార్ట్ అలెర్ట్లు',
-        'onboarding3_desc': 'వాతావరణ మార్పులు మరియు పంట ఆరోగ్యం గురించి తక్షణ నోటిఫికేషన్లను పొందండి.',
-        
+        'onboarding3_desc':
+            'వాతావరణ మార్పులు మరియు పంట ఆరోగ్యం గురించి తక్షణ నోటిఫికేషన్లను పొందండి.',
+
         // Home screen
         'good_morning': 'శుభోదయం!',
         'good_afternoon': 'శుభమధ్యాహ్నం!',
@@ -255,6 +306,19 @@ class _AppLocalizationsDelegate
         'fair': 'బాగానే',
         'live': 'లైవ్',
         'view_detailed_analysis': 'వివరణాత్మక విశ్లేషణ చూడండి',
+        'settings': 'సెట్టింగ్‌లు',
+        'edit_name': 'పేరు మార్చండి',
+        'email_address': 'ఇమెయిల్ చిరునామా',
+        'account_status': 'ఖాతా స్థితి',
+        'sign_out': 'సైన్ అవుట్',
+        'delete_account': 'ఖాతాను తొలగించండి',
+        'choose_language': 'భాషను ఎంచుకోండి',
+        'view_onboarding': 'ఆన్‌బోర్డింగ్‌ను మళ్లీ చూడండి',
+        'language_updated': 'భాష నవీకరించబడింది.',
+        'camera_permission_required': 'కెమెరా అనుమతి అవసరం',
+        'open_settings': 'సెట్టింగ్‌లను తెరవండి',
+        'cancel': 'రద్దు చేయండి',
+        'save': 'సేవ్ చేయండి',
       },
       'ta': {
         'appTitle': 'ஸ்மார்ட் அக்ரி ஆலோசகர்',
@@ -266,12 +330,15 @@ class _AppLocalizationsDelegate
         'changeLanguage': 'மொழியை மாற்றவும்',
         'voiceTutorial': 'குரல் பயிற்சி கிடைக்கிறது',
         'onboarding1_title': 'ஸ்மார்ட் பயிர் பரிந்துரைகள்',
-        'onboarding1_desc': 'உங்கள் மண் மற்றும் காலநிலையின் அடிப்படையில் சிறந்த பயிர்களுக்கான AI-இயக்கப்பட்ட பரிந்துரைகளைப் பெறவும்.',
+        'onboarding1_desc':
+            'உங்கள் மண் மற்றும் காலநிலையின் அடிப்படையில் சிறந்த பயிர்களுக்கான AI-இயக்கப்பட்ட பரிந்துரைகளைப் பெறவும்.',
         'onboarding2_title': 'நிகழ் நேர பகுப்பாய்வு',
-        'onboarding2_desc': 'நிகழ்நேர தரவு மற்றும் பகுப்பாய்வுகளுடன் உங்கள் பண்ணையின் செயல்திறனை கண்காணிக்கவும்.',
+        'onboarding2_desc':
+            'நிகழ்நேர தரவு மற்றும் பகுப்பாய்வுகளுடன் உங்கள் பண்ணையின் செயல்திறனை கண்காணிக்கவும்.',
         'onboarding3_title': 'ஸ்மார்ட் அலாரங்கள்',
-        'onboarding3_desc': 'வானிலை மாற்றங்கள் மற்றும் பயிர் ஆரோக்கியம் குறித்த உடனடி அறிவிப்புகளைப் பெறவும்.',
-        
+        'onboarding3_desc':
+            'வானிலை மாற்றங்கள் மற்றும் பயிர் ஆரோக்கியம் குறித்த உடனடி அறிவிப்புகளைப் பெறவும்.',
+
         // Home screen
         'good_morning': 'காலை வணக்கம்!',
         'good_afternoon': 'மதிய வணக்கம்!',
@@ -311,6 +378,19 @@ class _AppLocalizationsDelegate
         'fair': 'நியாயமான',
         'live': 'நேரலை',
         'view_detailed_analysis': 'விரிவான பகுப்பாய்வைக் காண்க',
+        'settings': 'அமைப்புகள்',
+        'edit_name': 'பெயரைத் திருத்து',
+        'email_address': 'மின்னஞ்சல் முகவரி',
+        'account_status': 'கணக்கு நிலை',
+        'sign_out': 'வெளியேறு',
+        'delete_account': 'கணக்கை நீக்கு',
+        'choose_language': 'மொழியைத் தேர்ந்தெடுக்கவும்',
+        'view_onboarding': 'அறிமுகத்தை மீண்டும் பார்க்கவும்',
+        'language_updated': 'மொழி புதுப்பிக்கப்பட்டது.',
+        'camera_permission_required': 'கேமரா அனுமதி தேவை',
+        'open_settings': 'அமைப்புகளைத் திறக்கவும்',
+        'cancel': 'ரத்து செய்',
+        'save': 'சேமி',
       },
       'mr': {
         'appTitle': 'स्मार्टएग्री सल्लागार',
@@ -322,12 +402,15 @@ class _AppLocalizationsDelegate
         'changeLanguage': 'भाषा बदला',
         'voiceTutorial': 'व्हॉइस ट्यूटोरियल उपलब्ध',
         'onboarding1_title': 'स्मार्ट पीक शिफारसी',
-        'onboarding1_desc': 'तुमच्या माती आणि हवामानावर आधारित सर्वोत्तम पिकांसाठी AI-चालित सूचना मिळवा.',
+        'onboarding1_desc':
+            'तुमच्या माती आणि हवामानावर आधारित सर्वोत्तम पिकांसाठी AI-चालित सूचना मिळवा.',
         'onboarding2_title': 'रिअल-टाइम विश्लेषण',
-        'onboarding2_desc': 'रिअल-टाइम डेटा आणि विश्लेषणासह तुमच्या शेताच्या कामगिरीचे निरीक्षण करा.',
+        'onboarding2_desc':
+            'रिअल-टाइम डेटा आणि विश्लेषणासह तुमच्या शेताच्या कामगिरीचे निरीक्षण करा.',
         'onboarding3_title': 'स्मार्ट अलर्ट',
-        'onboarding3_desc': 'हवामान बदल आणि पीक आरोग्याबद्दल त्वरित सूचना मिळवा.',
-        
+        'onboarding3_desc':
+            'हवामान बदल आणि पीक आरोग्याबद्दल त्वरित सूचना मिळवा.',
+
         // Home screen
         'good_morning': 'सुप्रभात!',
         'good_afternoon': 'शुभ दुपार!',
@@ -367,6 +450,19 @@ class _AppLocalizationsDelegate
         'fair': 'ठीक',
         'live': 'थेट',
         'view_detailed_analysis': 'तपशीलवार विश्लेषण पहा',
+        'settings': 'सेटिंग्ज',
+        'edit_name': 'नाव बदला',
+        'email_address': 'ईमेल पत्ता',
+        'account_status': 'खाते स्थिती',
+        'sign_out': 'साइन आउट',
+        'delete_account': 'खाते हटवा',
+        'choose_language': 'भाषा निवडा',
+        'view_onboarding': 'ऑनबोर्डिंग पुन्हा पहा',
+        'language_updated': 'भाषा अपडेट झाली.',
+        'camera_permission_required': 'कॅमेरा परवानगी आवश्यक',
+        'open_settings': 'सेटिंग्ज उघडा',
+        'cancel': 'रद्द करा',
+        'save': 'जतन करा',
       },
     };
 
@@ -374,5 +470,6 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) => false;
+  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
+      false;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../localization/app_localizations.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/scan/scan_screen.dart';
 import '../screens/chat/chat_screen.dart';
@@ -44,6 +45,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!;
     return Scaffold(
       body: PageView.builder(
         controller: _pageController,
@@ -82,31 +84,31 @@ class _MainNavigationState extends State<MainNavigation> {
         selectedFontSize: 12,
         unselectedFontSize: 10,
         iconSize: 22,
-        items: const [
+        items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'Home',
+            label: localization.getText('home'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.eco_outlined),
             activeIcon: Icon(Icons.eco),
-            label: 'Scan Crop',
+            label: localization.getText('scan'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             activeIcon: Icon(Icons.chat_bubble),
-            label: 'Chat',
+            label: localization.getText('chat'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.lightbulb_outline),
             activeIcon: Icon(Icons.lightbulb),
-            label: 'Advice',
+            label: localization.getText('advice'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            label: localization.getText('profile'),
           ),
         ],
       ),

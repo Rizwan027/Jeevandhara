@@ -316,11 +316,21 @@ class _InputDataScreenState extends State<InputDataScreen>
                         const SizedBox(height: 16),
 
                         // Compact Parameters Grid
-                        Column(
-                          children: [
-                            Row(
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final columnCount = constraints.maxWidth >= 520
+                                ? 3
+                                : 2;
+                            final fieldWidth =
+                                (constraints.maxWidth -
+                                    (columnCount - 1) * 12) /
+                                columnCount;
+                            return Wrap(
+                              spacing: 12,
+                              runSpacing: 16,
                               children: [
-                                Expanded(
+                                SizedBox(
+                                  width: fieldWidth,
                                   child: _buildCompactInputField(
                                     'pH',
                                     _phController,
@@ -339,8 +349,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                     },
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
+                                SizedBox(
+                                  width: fieldWidth,
                                   child: _buildCompactInputField(
                                     'Moisture %',
                                     _moistureController,
@@ -359,8 +369,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                     },
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
+                                SizedBox(
+                                  width: fieldWidth,
                                   child: _buildCompactInputField(
                                     'Temp °C',
                                     _temperatureController,
@@ -380,8 +390,8 @@ class _InputDataScreenState extends State<InputDataScreen>
                                   ),
                                 ),
                               ],
-                            ),
-                          ],
+                            );
+                          },
                         ),
 
                         const SizedBox(height: 20),
@@ -422,56 +432,65 @@ class _InputDataScreenState extends State<InputDataScreen>
                               const SizedBox(height: 12),
 
                               // Compact NPK Row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildCompactNutrientField(
-                                      'N',
-                                      _nitrogenController,
-                                      const Color(0xFF10B981),
-                                      _nitrogenValue,
-                                      (value) {
-                                        setState(() {
-                                          _nitrogenValue = value;
-                                          _nitrogenController.text = value
-                                              .toStringAsFixed(0);
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildCompactNutrientField(
-                                      'P',
-                                      _phosphorusController,
-                                      const Color(0xFF3B82F6),
-                                      _phosphorusValue,
-                                      (value) {
-                                        setState(() {
-                                          _phosphorusValue = value;
-                                          _phosphorusController.text = value
-                                              .toStringAsFixed(0);
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildCompactNutrientField(
-                                      'K',
-                                      _potassiumController,
-                                      const Color(0xFFF59E0B),
-                                      _potassiumValue,
-                                      (value) {
-                                        setState(() {
-                                          _potassiumValue = value;
-                                          _potassiumController.text = value
-                                              .toStringAsFixed(0);
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ],
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final fieldWidth =
+                                      (constraints.maxWidth - 16) / 3;
+                                  return Wrap(
+                                    spacing: 8,
+                                    runSpacing: 12,
+                                    children: [
+                                      SizedBox(
+                                        width: fieldWidth,
+                                        child: _buildCompactNutrientField(
+                                          'N',
+                                          _nitrogenController,
+                                          const Color(0xFF10B981),
+                                          _nitrogenValue,
+                                          (value) {
+                                            setState(() {
+                                              _nitrogenValue = value;
+                                              _nitrogenController.text = value
+                                                  .toStringAsFixed(0);
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: fieldWidth,
+                                        child: _buildCompactNutrientField(
+                                          'P',
+                                          _phosphorusController,
+                                          const Color(0xFF3B82F6),
+                                          _phosphorusValue,
+                                          (value) {
+                                            setState(() {
+                                              _phosphorusValue = value;
+                                              _phosphorusController.text = value
+                                                  .toStringAsFixed(0);
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: fieldWidth,
+                                        child: _buildCompactNutrientField(
+                                          'K',
+                                          _potassiumController,
+                                          const Color(0xFFF59E0B),
+                                          _potassiumValue,
+                                          (value) {
+                                            setState(() {
+                                              _potassiumValue = value;
+                                              _potassiumController.text = value
+                                                  .toStringAsFixed(0);
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                             ],
                           ),

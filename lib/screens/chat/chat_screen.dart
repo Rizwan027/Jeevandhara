@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import '../advice/advice_screen.dart';
-import '../home/home_screen.dart';
-import '../scan/scan_screen.dart';
 import '../../services/ai_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -68,6 +65,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       Future.delayed(const Duration(milliseconds: 100), () {
+        if (!mounted || !_scrollController.hasClients) return;
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -964,54 +962,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 3, // Chat tab
-      onTap: (index) {
-        if (index == 0) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const HomeScreen(showBottomNav: true),
-            ),
-          );
-        } else if (index == 1) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AdviceScreen(showBottomNav: true),
-            ),
-          );
-        } else if (index == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ScanScreen(showBottomNav: true),
-            ),
-          );
-        }
-        // Current tab (chat) - no action needed
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF10B981),
-      unselectedItemColor: const Color(0xFF9CA3AF),
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      elevation: 8,
-      backgroundColor: Colors.white,
-      selectedFontSize: 12,
-      unselectedFontSize: 10,
-      iconSize: 22,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: 'Advice'),
-        BottomNavigationBarItem(icon: Icon(Icons.eco), label: 'Scan Crop'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-      ],
     );
   }
 }

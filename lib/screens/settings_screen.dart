@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import 'onboarding_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../localization/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,7 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final selected = await showDialog<String>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        title: const Text('Choose language'),
+        title: Text(AppLocalizations.of(context)!.getText('choose_language')),
         children: _languages.keys
             .map(
               (name) => SimpleDialogOption(
@@ -41,9 +42,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setString('selected_language', selected);
     if (!mounted) return;
     MyApp.of(context).setLocale(_languages[selected]!);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Language updated.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.getText('language_updated'),
+        ),
+      ),
+    );
   }
 
   Future<void> _restartOnboarding() async {
@@ -63,20 +68,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(localization.getText('settings'))),
       body: ListView(
         children: [
           ListTile(
             leading: const Icon(Icons.language),
-            title: const Text('Language'),
+            title: Text(localization.getText('choose_language')),
             subtitle: const Text('Change the app language'),
             trailing: const Icon(Icons.chevron_right),
             onTap: _changeLanguage,
           ),
           ListTile(
             leading: const Icon(Icons.menu_book_outlined),
-            title: const Text('View onboarding again'),
+            title: Text(localization.getText('view_onboarding')),
             subtitle: const Text('Review the Jeevandhara introduction'),
             trailing: const Icon(Icons.chevron_right),
             onTap: _restartOnboarding,
