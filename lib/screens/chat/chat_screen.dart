@@ -54,6 +54,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _addMessage(String text, {required bool isUser}) {
+    if (!mounted) return;
     setState(() {
       messages.add(
         ChatMessage(text: text, isUser: isUser, timestamp: DateTime.now()),
@@ -89,29 +90,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _getAIResponse(String userMessage) async {
+    String response;
     try {
-      // Try to get AI response first
-      String response;
-      if (_aiService.isAIAvailable()) {
-        response = await _aiService.getAgriculturalAdvice(userMessage);
-      } else {
-        response =
-            'AI service unavailable. This is general reference information, not live or personalized advice.\n\n${_getFallbackResponse(userMessage)}';
-      }
-
-      // Add AI response
-      if (!mounted) return;
-      setState(() => _isTyping = false);
-      _addMessage(response, isUser: false);
-    } catch (e) {
-      // Fallback to predefined response on error
-      if (!mounted) return;
-      setState(() => _isTyping = false);
-      _addMessage(
-        'AI service unavailable. This is general reference information, not live or personalized advice.\n\n${_getFallbackResponse(userMessage)}',
-        isUser: false,
-      );
+      response = await _aiService.getAgriculturalAdvice(userMessage);
+    } on AIServiceException catch (error) {
+      response = error.message;
+    } catch (_) {
+      response = 'Unable to generate a reply. Please try again.';
     }
+
+    if (!mounted) return;
+    setState(() => _isTyping = false);
+    _addMessage(response, isUser: false);
   }
 
   String _getFallbackResponse(String userMessage) {
@@ -275,7 +265,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           Text(
-                            'Online • Ready to help',
+                            _aiService.isAvailable
+                                ? 'Online • Ready to help'
+                                : 'Offline • AI unavailable',
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey[600],

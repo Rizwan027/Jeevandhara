@@ -1,0 +1,76 @@
+Six-feature crop model experiment
+Dataset size: 2200 rows
+Number of classes: 22
+Features: N, P, K, temperature, humidity, ph
+Split: stratified 80/20 train/test, random_state=42
+Model selection: Stratified 5-Fold CV on training set only, shuffle=True, random_state=42
+Models tested: RandomForestClassifier, ExtraTreesClassifier, HistGradientBoostingClassifier, SVC
+
+Candidate results:
+RandomForestClassifier: CV accuracy 0.964205 +/- 0.004616; test accuracy 0.968182; precision 0.969090; recall 0.968182; F1 0.967837
+ExtraTreesClassifier: CV accuracy 0.965909 +/- 0.004754; test accuracy 0.970455; precision 0.971381; recall 0.970455; F1 0.970315
+HistGradientBoostingClassifier: CV accuracy 0.956818 +/- 0.007051; test accuracy 0.965909; precision 0.966638; recall 0.965909; F1 0.965683
+SVC: CV accuracy 0.946591 +/- 0.005207; test accuracy 0.961364; precision 0.962445; recall 0.961364; F1 0.961099
+
+Best model: ExtraTreesClassifier
+Best hyperparameters: {'bootstrap': False, 'ccp_alpha': 0.0, 'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 0.8, 'max_leaf_nodes': None, 'max_samples': None, 'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'min_weight_fraction_leaf': 0.0, 'monotonic_cst': None, 'n_estimators': 300, 'n_jobs': -1, 'oob_score': False, 'random_state': 42, 'verbose': 0, 'warm_start': False}
+Best CV accuracy mean/std: 0.965909 / 0.004754
+Final test accuracy: 0.970455
+Final weighted precision/recall/F1: 0.971381 / 0.970455 / 0.970315
+Previous six-feature baseline: 0.968200
+Improved over previous baseline: True
+
+Final classification report:
+              precision    recall  f1-score   support
+
+       apple       1.00      1.00      1.00        20
+      banana       1.00      1.00      1.00        20
+   blackgram       0.86      0.95      0.90        20
+    chickpea       1.00      1.00      1.00        20
+     coconut       1.00      1.00      1.00        20
+      coffee       1.00      1.00      1.00        20
+      cotton       1.00      1.00      1.00        20
+      grapes       1.00      1.00      1.00        20
+        jute       0.94      0.80      0.86        20
+ kidneybeans       1.00      1.00      1.00        20
+      lentil       0.84      0.80      0.82        20
+       maize       1.00      1.00      1.00        20
+       mango       1.00      1.00      1.00        20
+   mothbeans       0.95      0.95      0.95        20
+    mungbean       1.00      1.00      1.00        20
+   muskmelon       1.00      1.00      1.00        20
+      orange       1.00      1.00      1.00        20
+      papaya       1.00      1.00      1.00        20
+  pigeonpeas       0.95      0.90      0.92        20
+ pomegranate       1.00      1.00      1.00        20
+        rice       0.83      0.95      0.88        20
+  watermelon       1.00      1.00      1.00        20
+
+    accuracy                           0.97       440
+   macro avg       0.97      0.97      0.97       440
+weighted avg       0.97      0.97      0.97       440
+
+Confusion matrix (rows=true, columns=predicted):
+             apple  banana  blackgram  chickpea  coconut  coffee  cotton  grapes  jute  kidneybeans  lentil  maize  mango  mothbeans  mungbean  muskmelon  orange  papaya  pigeonpeas  pomegranate  rice  watermelon
+apple           20       0          0         0        0       0       0       0     0            0       0      0      0          0         0          0       0       0           0            0     0           0
+banana           0      20          0         0        0       0       0       0     0            0       0      0      0          0         0          0       0       0           0            0     0           0
+blackgram        0       0         19         0        0       0       0       0     0            0       1      0      0          0         0          0       0       0           0            0     0           0
+chickpea         0       0          0        20        0       0       0       0     0            0       0      0      0          0         0          0       0       0           0            0     0           0
+coconut          0       0          0         0       20       0       0       0     0            0       0      0      0          0         0          0       0       0           0            0     0           0
+coffee           0       0          0         0        0      20       0       0     0            0       0      0      0          0         0          0       0       0           0            0     0           0
+cotton           0       0          0         0        0       0      20       0     0            0       0      0      0          0         0          0       0       0           0            0     0           0
+grapes           0       0          0         0        0       0       0      20     0            0       0      0      0          0         0          0       0       0           0            0     0           0
+jute             0       0          0         0        0       0       0       0    16            0       0      0      0          0         0          0       0       0           0            0     4           0
+kidneybeans      0       0          0         0        0       0       0       0     0           20       0      0      0          0         0          0       0       0           0            0     0           0
+lentil           0       0          3         0        0       0       0       0     0            0      16      0      0          1         0          0       0       0           0            0     0           0
+maize            0       0          0         0        0       0       0       0     0            0       0     20      0          0         0          0       0       0           0            0     0           0
+mango            0       0          0         0        0       0       0       0     0            0       0      0     20          0         0          0       0       0           0            0     0           0
+mothbeans        0       0          0         0        0       0       0       0     0            0       0      0      0         19         0          0       0       0           1            0     0           0
+mungbean         0       0          0         0        0       0       0       0     0            0       0      0      0          0        20          0       0       0           0            0     0           0
+muskmelon        0       0          0         0        0       0       0       0     0            0       0      0      0          0         0         20       0       0           0            0     0           0
+orange           0       0          0         0        0       0       0       0     0            0       0      0      0          0         0          0      20       0           0            0     0           0
+papaya           0       0          0         0        0       0       0       0     0            0       0      0      0          0         0          0       0      20           0            0     0           0
+pigeonpeas       0       0          0         0        0       0       0       0     0            0       2      0      0          0         0          0       0       0          18            0     0           0
+pomegranate      0       0          0         0        0       0       0       0     0            0       0      0      0          0         0          0       0       0           0           20     0           0
+rice             0       0          0         0        0       0       0       0     1            0       0      0      0          0         0          0       0       0           0            0    19           0
+watermelon       0       0          0         0        0       0       0       0     0            0       0      0      0          0         0          0       0       0           0            0     0          20

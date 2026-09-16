@@ -7,12 +7,18 @@ import '../input_data/input_data_screen.dart';
 import 'home_market_section.dart';
 import '../../services/weather_service.dart';
 import '../../services/ai_service.dart';
+import '../../services/market_data_service.dart';
 import '../../localization/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showBottomNav;
+  final ValueNotifier<List<String>>? recommendationNotifier;
 
-  const HomeScreen({super.key, this.showBottomNav = true});
+  const HomeScreen({
+    super.key,
+    this.showBottomNav = true,
+    this.recommendationNotifier,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -23,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _animation;
   late WeatherService _weatherService;
   late AIService _aiService;
+  late MarketDataService _marketDataService;
 
   WeatherData? _currentWeather;
   List<WeatherAlert> _weatherAlerts = [];
@@ -30,12 +37,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isLoadingWeather = true;
   bool _weatherIsStale = false;
   int _weatherRequestId = 0;
+  List<MarketPrice> _marketPrices = [];
+  bool _isLoadingMarket = true;
+  bool _marketHasError = false;
+  int _marketRequestId = 0;
+  List<String>? _lastRequestedCommodities;
 
   @override
   void initState() {
     super.initState();
     _weatherService = WeatherService();
     _aiService = AIService();
+    _marketDataService = MarketDataService();
 
     _animationController = AnimationController(
       vsync: this,
@@ -49,6 +62,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     // Load weather data
     _loadWeatherData();
+    _loadMarketData();
+    widget.recommendationNotifier?.addListener(_onRecommendationsChanged);
+  }
+
+  void _onRecommendationsChanged() {
+    final commodities = widget.recommendationNotifier!.value
+        .map((crop) => crop.trim())
+        .where((crop) => crop.isNotEmpty)
+        .toList(growable: false);
+    if (commodities.isEmpty ||
+        _sameCommodityList(_lastRequestedCommodities, commodities)) {
+      return;
+    }
+    _lastRequestedCommodities = commodities;
+    _loadMarketData(commodities: commodities);
+  }
+
+  bool _sameCommodityList(List<String>? first, List<String> second) {
+    if (first == null || first.length != second.length) return false;
+    for (var index = 0; index < second.length; index++) {
+      if (first[index] != second[index]) return false;
+    }
+    return true;
   }
 
   Future<void> _loadWeatherData() async {
@@ -95,8 +131,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> _loadMarketData({List<String>? commodities}) async {
+    final requestId = ++_marketRequestId;
+    if (mounted) {
+      setState(() {
+        _isLoadingMarket = true;
+        _marketHasError = false;
+      });
+    }
+    try {
+      final prices = await _marketDataService.fetchDailyPrices(
+        commodities: commodities,
+      );
+      if (!mounted || requestId != _marketRequestId) return;
+      setState(() {
+        _marketPrices = prices;
+        _isLoadingMarket = false;
+        _marketHasError = false;
+      });
+    } catch (error) {
+      developer.log(
+        'Error loading market data',
+        error: error,
+        name: 'HomeScreen',
+      );
+      if (!mounted || requestId != _marketRequestId) return;
+      final hasExistingPrices = _marketPrices.isNotEmpty;
+      setState(() {
+        if (!hasExistingPrices) _marketPrices = [];
+        _isLoadingMarket = false;
+        _marketHasError = !hasExistingPrices;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    widget.recommendationNotifier?.removeListener(_onRecommendationsChanged);
     _animationController.dispose();
     super.dispose();
   }
@@ -235,12 +306,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 16),
                     HomeMarketSection(
+                      marketPrices: _marketPrices,
+                      isLoading: _isLoadingMarket,
+                      hasError: _marketHasError,
                       onViewAnalysis: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const AdviceScreen(showBottomNav: true),
+                            builder: (context) => AdviceScreen(
+                              showBottomNav: true,
+                              recommendationNotifier:
+                                  widget.recommendationNotifier,
+                            ),
                           ),
                         );
                       },
@@ -279,7 +356,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const AdviceScreen(showBottomNav: true),
+                builder: (context) => AdviceScreen(
+                  showBottomNav: true,
+                  recommendationNotifier: widget.recommendationNotifier,
+                ),
               ),
             ),
           ),
@@ -1190,8 +1270,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          const AdviceScreen(showBottomNav: true),
+                      builder: (context) => AdviceScreen(
+                        showBottomNav: true,
+                        recommendationNotifier: widget.recommendationNotifier,
+                      ),
                     ),
                   );
                 },

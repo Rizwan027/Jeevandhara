@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../services/ai_service.dart';
+import '../../services/crop_ml_service.dart';
 import '../../services/weather_service.dart';
 import '../../services/soil_data_service.dart';
 
 class AdviceScreen extends StatefulWidget {
   final bool showBottomNav;
+  final ValueNotifier<List<String>>? recommendationNotifier;
 
-  const AdviceScreen({super.key, this.showBottomNav = false});
+  const AdviceScreen({
+    super.key,
+    this.showBottomNav = false,
+    this.recommendationNotifier,
+  });
 
   @override
   State<AdviceScreen> createState() => _AdviceScreenState();
@@ -23,6 +31,8 @@ class _AdviceScreenState extends State<AdviceScreen>
   Map<String, dynamic>? weatherData;
   bool isLoading = true;
   List<Map<String, dynamic>> recommendedCrops = [];
+  final CropMlService _cropMlService = CropMlService();
+  bool _usingMlRecommendations = false;
   bool weatherUnavailable = false;
   String? loadError;
   int _requestId = 0;
@@ -43,6 +53,7 @@ class _AdviceScreenState extends State<AdviceScreen>
 
   @override
   void dispose() {
+    _cropMlService.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -82,8 +93,20 @@ class _AdviceScreenState extends State<AdviceScreen>
         weatherData = _getDefaultWeatherData();
       }
 
-      // Generate recommendations
-      recommendedCrops = _generateCropRecommendations();
+      // Prefer the ML predictions and retain the seasonal rules as fallback.
+      try {
+        final mlRecommendations = await _generateMlRecommendations();
+        if (mlRecommendations == null) {
+          _usingMlRecommendations = false;
+          recommendedCrops = _generateCropRecommendations();
+        } else {
+          _usingMlRecommendations = true;
+          recommendedCrops = mlRecommendations;
+        }
+      } catch (_) {
+        _usingMlRecommendations = false;
+        recommendedCrops = _generateCropRecommendations();
+      }
 
       if (!mounted || requestId != _requestId) return;
       setState(() {
@@ -103,6 +126,104 @@ class _AdviceScreenState extends State<AdviceScreen>
 
   Map<String, dynamic> _getDefaultWeatherData() {
     return {'temperature': 25.0, 'humidity': 65.0, 'rainfall': 800.0};
+  }
+
+  Future<List<Map<String, dynamic>>?> _generateMlRecommendations() async {
+    final soil = soilData;
+    final weather = weatherData;
+    if (soil == null || weather == null) return null;
+
+    final nitrogen = soil['nitrogen'];
+    final phosphorus = soil['phosphorus'];
+    final potassium = soil['potassium'];
+    final ph = soil['ph'];
+    final temperature = weather['temperature'];
+    final humidity = weather['humidity'];
+    if ([
+      nitrogen,
+      phosphorus,
+      potassium,
+      ph,
+      temperature,
+      humidity,
+    ].any((value) => value is! num)) {
+      return null;
+    }
+
+    final prediction = await _cropMlService.predict(
+      nitrogen: nitrogen!.toDouble(),
+      phosphorus: phosphorus!.toDouble(),
+      potassium: potassium!.toDouble(),
+      temperature: temperature!.toDouble(),
+      humidity: humidity!.toDouble(),
+      ph: ph!.toDouble(),
+    );
+
+    final recommendedNames = prediction.topCrops
+        .map((crop) => _displayCropName(crop.crop))
+        .toList(growable: false);
+    if (mounted) {
+      widget.recommendationNotifier?.value = List.unmodifiable(
+        recommendedNames,
+      );
+    }
+
+    final primaryCrop = prediction.topCrops.first;
+    String? aiExplanation;
+    try {
+      aiExplanation = await AIService().getAgriculturalAdvice('''
+    The ML model has already selected ${_displayCropName(primaryCrop.crop)}. Gemini is only explaining that prediction; do not recommend a different crop.
+
+    Use only these supplied values:
+    - Selected crop: ${_displayCropName(primaryCrop.crop)}
+    - ML model confidence/suitability signal: ${(primaryCrop.probability * 100).toStringAsFixed(1)}%
+    - Nitrogen: ${nitrogen.toDouble()}
+    - Phosphorus: ${phosphorus.toDouble()}
+    - Potassium: ${potassium.toDouble()}
+    - pH: ${ph.toDouble()}
+    - Temperature: ${temperature.toDouble()}°C
+    - Humidity: ${humidity.toDouble()}%
+
+    Return concise, farmer-friendly Markdown with exactly these sections:
+    ## Why this crop?
+    Explain that the ML model produced the crop prediction and that its percentage is a model confidence/suitability signal, not a guarantee of crop success.
+    **Soil conditions:** Explain only the supplied N, P, K, and pH values.
+    **Weather conditions:** Explain only the supplied temperature and humidity values.
+    **General guidance:** Give 1-2 conservative, general cultivation considerations.
+
+    Do not invent measurements, weather conditions, prices, costs, subsidies, market claims, or financial claims. Do not provide pesticide or fertilizer product recommendations or specific chemical/dosage instructions.
+''');
+    } catch (_) {
+      aiExplanation = null;
+    }
+
+    return [
+      for (final crop in prediction.topCrops)
+        {
+          'name': _displayCropName(crop.crop),
+          'suitability': crop.probability * 100,
+          'reason':
+              'ML prediction confidence: ${(crop.probability * 100).toStringAsFixed(1)}%',
+          'expectedYield': 'Model prediction',
+          'duration': 'Model prediction',
+          'profit': 'Model prediction',
+          'icon': FontAwesomeIcons.seedling,
+          'color': const Color(0xFF4CAF50),
+          'source': 'ML model',
+          'aiExplanation': crop == primaryCrop ? aiExplanation : null,
+        },
+    ];
+  }
+
+  String _displayCropName(String crop) {
+    return crop
+        .split(' ')
+        .map(
+          (word) => word.isEmpty
+              ? word
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
+        .join(' ');
   }
 
   List<Map<String, dynamic>> _generateCropRecommendations() {
@@ -530,7 +651,9 @@ class _AdviceScreenState extends State<AdviceScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recommended Crops',
+          _usingMlRecommendations
+              ? 'ML Crop Predictions'
+              : 'Recommended Crops (rule-based fallback)',
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -568,6 +691,7 @@ class _AdviceScreenState extends State<AdviceScreen>
         : suitability >= 60
         ? Colors.orange
         : Colors.red;
+    final aiExplanation = crop['aiExplanation'] as String?;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -621,6 +745,25 @@ class _AdviceScreenState extends State<AdviceScreen>
                             ),
                           ),
                         ),
+                        if (crop['source'] != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              crop['source'],
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         if (index == 0)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -675,6 +818,38 @@ class _AdviceScreenState extends State<AdviceScreen>
               height: 1.4,
             ),
           ),
+          if (aiExplanation != null && aiExplanation.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Why this crop?',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2E7D32),
+              ),
+            ),
+            const SizedBox(height: 4),
+            MarkdownBody(
+              data: aiExplanation,
+              styleSheet: MarkdownStyleSheet(
+                p: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: const Color(0xFF374151),
+                  height: 1.4,
+                ),
+                h2: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2E7D32),
+                ),
+                strong: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF374151),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [

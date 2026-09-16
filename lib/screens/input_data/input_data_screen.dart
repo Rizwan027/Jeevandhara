@@ -16,12 +16,6 @@ class _InputDataScreenState extends State<InputDataScreen>
   final TextEditingController _phController = TextEditingController(
     text: '6.5',
   );
-  final TextEditingController _moistureController = TextEditingController(
-    text: '65',
-  );
-  final TextEditingController _temperatureController = TextEditingController(
-    text: '28',
-  );
   final TextEditingController _nitrogenController = TextEditingController(
     text: '78',
   );
@@ -43,7 +37,6 @@ class _InputDataScreenState extends State<InputDataScreen>
   // Value ranges for sliders
   double _phValue = 6.5;
   double _moistureValue = 65.0;
-  double _temperatureValue = 28.0;
   double _nitrogenValue = 78.0;
   double _phosphorusValue = 82.0;
   double _potassiumValue = 71.0;
@@ -51,8 +44,6 @@ class _InputDataScreenState extends State<InputDataScreen>
   // Parameter info for tooltips
   final Map<String, String> _parameterInfo = {
     'pH': 'Soil pH level (4.0-9.0)\nOptimal range: 6.0-7.5',
-    'Moisture': 'Soil moisture percentage (0-100%)\nOptimal range: 40-80%',
-    'Temperature': 'Soil temperature (0-50°C)\nOptimal range: 15-35°C',
     'Nitrogen': 'Nitrogen content (0-100%)\nEssential for leaf growth',
     'Phosphorus': 'Phosphorus content (0-100%)\nImportant for root development',
     'Potassium': 'Potassium content (0-100%)\nHelps with disease resistance',
@@ -90,7 +81,6 @@ class _InputDataScreenState extends State<InputDataScreen>
     if (!mounted || data == null) return;
     _phValue = data['ph'] ?? _phValue;
     _moistureValue = data['moisture'] ?? _moistureValue;
-    _temperatureValue = data['temperature'] ?? _temperatureValue;
     _nitrogenValue = data['nitrogen'] ?? _nitrogenValue;
     _phosphorusValue = data['phosphorus'] ?? _phosphorusValue;
     _potassiumValue = data['potassium'] ?? _potassiumValue;
@@ -99,8 +89,6 @@ class _InputDataScreenState extends State<InputDataScreen>
 
   void _syncControllersWithSliders() {
     _phController.text = _phValue.toStringAsFixed(1);
-    _moistureController.text = _moistureValue.toStringAsFixed(0);
-    _temperatureController.text = _temperatureValue.toStringAsFixed(0);
     _nitrogenController.text = _nitrogenValue.toStringAsFixed(0);
     _phosphorusController.text = _phosphorusValue.toStringAsFixed(0);
     _potassiumController.text = _potassiumValue.toStringAsFixed(0);
@@ -110,8 +98,6 @@ class _InputDataScreenState extends State<InputDataScreen>
   void dispose() {
     _animationController.dispose();
     _phController.dispose();
-    _moistureController.dispose();
-    _temperatureController.dispose();
     _nitrogenController.dispose();
     _phosphorusController.dispose();
     _potassiumController.dispose();
@@ -303,7 +289,7 @@ class _InputDataScreenState extends State<InputDataScreen>
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'Soil Parameters',
+                              'Soil Information',
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -343,48 +329,6 @@ class _InputDataScreenState extends State<InputDataScreen>
                                     (value) {
                                       setState(() {
                                         _phValue = value;
-                                        _phController.text = value
-                                            .toStringAsFixed(1);
-                                      });
-                                    },
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: fieldWidth,
-                                  child: _buildCompactInputField(
-                                    'Moisture %',
-                                    _moistureController,
-                                    Icons.water_drop,
-                                    const Color(0xFF3B82F6),
-                                    _moistureValue,
-                                    0.0,
-                                    100.0,
-                                    0,
-                                    (value) {
-                                      setState(() {
-                                        _moistureValue = value;
-                                        _moistureController.text = value
-                                            .toStringAsFixed(0);
-                                      });
-                                    },
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: fieldWidth,
-                                  child: _buildCompactInputField(
-                                    'Temp °C',
-                                    _temperatureController,
-                                    Icons.thermostat,
-                                    const Color(0xFFF59E0B),
-                                    _temperatureValue,
-                                    0.0,
-                                    50.0,
-                                    0,
-                                    (value) {
-                                      setState(() {
-                                        _temperatureValue = value;
-                                        _temperatureController.text = value
-                                            .toStringAsFixed(0);
                                       });
                                     },
                                   ),
@@ -495,6 +439,55 @@ class _InputDataScreenState extends State<InputDataScreen>
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.cloud,
+                              color: Color(0xFF3B82F6),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Weather',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildAutomaticWeatherRow(
+                          Icons.thermostat,
+                          'Temperature',
+                        ),
+                        const SizedBox(height: 8),
+                        _buildAutomaticWeatherRow(Icons.water_drop, 'Humidity'),
                       ],
                     ),
                   ),
@@ -652,7 +645,7 @@ class _InputDataScreenState extends State<InputDataScreen>
             ),
             inputFormatters: [
               FilteringTextInputFormatter.allow(
-                RegExp(r'^\d+\.?\d{0,' + decimals.toString() + '}'),
+                RegExp(r'^\d+\.?\d{0,' + decimals.toString() + r'}$'),
               ),
             ],
             validator: (value) {
@@ -848,7 +841,6 @@ class _InputDataScreenState extends State<InputDataScreen>
       final soilData = {
         'ph': _phValue,
         'moisture': _moistureValue,
-        'temperature': _temperatureValue,
         'nitrogen': _nitrogenValue,
         'phosphorus': _phosphorusValue,
         'potassium': _potassiumValue,
@@ -926,6 +918,31 @@ class _InputDataScreenState extends State<InputDataScreen>
         });
       }
     }
+  }
+
+  Widget _buildAutomaticWeatherRow(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF3B82F6)),
+        const SizedBox(width: 8),
+        Text(
+          '$label:',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          'Automatically detected',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+      ],
+    );
   }
 
   void _showErrorSnackBar(String message) {

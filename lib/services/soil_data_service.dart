@@ -5,7 +5,6 @@ class SoilDataService {
   static const Map<String, List<double>> _ranges = {
     'ph': [4, 9],
     'moisture': [0, 100],
-    'temperature': [0, 50],
     'nitrogen': [0, 100],
     'phosphorus': [0, 100],
     'potassium': [0, 100],

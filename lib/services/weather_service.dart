@@ -1,12 +1,13 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WeatherService {
-  static const _apiKey = String.fromEnvironment('OPENWEATHER_API_KEY');
+  static String get _apiKey => dotenv.env['OPENWEATHER_API_KEY']?.trim() ?? '';
   static const _baseUrl = 'https://api.openweathermap.org/data/2.5';
   static const _cachedWeatherKey = 'weather_cache';
   static const _cachedForecastKey = 'weather_forecast_cache';

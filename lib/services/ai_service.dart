@@ -1,55 +1,93 @@
+import 'dart:async';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
 
-class AIService {
-  // AI calls require an authenticated backend; client-side provider keys are unsafe.
-  static const bool _isBackendConfigured = false;
-  late final GenerativeModel _model;
+class AIServiceException implements Exception {
+  final String message;
 
-  AIService() {
-    if (_isBackendConfigured) {
-      throw UnsupportedError('AI backend is not configured for this client.');
+  const AIServiceException(this.message);
+}
+
+class AIService {
+  static const _maxMessageLength = 4000;
+  static const _modelName = 'gemini-3.6-flash';
+  final GenerativeModel? _model;
+
+  AIService() : _model = _createModel();
+
+  bool get isAvailable => _model != null;
+
+  static GenerativeModel? _createModel() {
+    String? apiKey;
+    try {
+      apiKey = dotenv.env['GEMINI_API_KEY']?.trim();
+    } catch (_) {
+      return null;
     }
+    if (apiKey == null || apiKey.isEmpty) return null;
+    return GenerativeModel(model: _modelName, apiKey: apiKey);
   }
 
-  bool isAIAvailable() => _isBackendConfigured;
-
   Future<String> getAgriculturalAdvice(String userQuestion) async {
-    if (!isAIAvailable()) {
-      return 'AI advice is currently unavailable. Please consult a qualified local agricultural expert for crop, disease, or treatment decisions.';
+    final message = userQuestion.trim();
+    if (message.isEmpty || message.length > _maxMessageLength) {
+      throw AIServiceException('Please enter a message of 1-4,000 characters.');
     }
+
+    final model = _model;
+    if (model == null) {
+      throw AIServiceException(
+        'AI service is unavailable. Add GEMINI_API_KEY to your .env file.',
+      );
+    }
+
     try {
-      // Enhanced prompt with agricultural context
       final prompt =
-          """
-You are an expert agricultural advisor AI assistant helping farmers in India. 
-Provide brief, practical farming advice.
+          '''
+You are an expert agricultural advisor AI assistant helping farmers in India.
+Provide brief, practical farming advice in under 150 words.
+Use bullet points, include specific costs in INR when relevant, and prioritize
+immediate actionable steps.
 
-Guidelines:
-- Keep responses SHORT (max 100-150 words)
-- Focus on 2-3 most important points only
-- Use bullet points for clarity
-- Include specific costs in ₹ when relevant
-- Use 1-2 emojis for key points
-- Give direct answers, avoid long explanations
-- Prioritize immediate actionable steps
-
-Farmer's Question: $userQuestion
-
-Provide a concise, practical response:
-""";
-
-      final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
-
-      if (response.text != null && response.text!.isNotEmpty) {
-        return response.text!;
-      } else {
-        return _getFallbackResponse(userQuestion);
+Farmer's Question: $message
+''';
+      final response = await model.generateContent([Content.text(prompt)]);
+      final reply = response.text?.trim();
+      if (reply == null || reply.isEmpty) {
+        throw AIServiceException('The AI service returned an empty response.');
       }
-    } catch (e) {
-      developer.log('AI service error', error: e, name: 'AIService');
-      return _getFallbackResponse(userQuestion);
+      return reply;
+    } on AIServiceException {
+      rethrow;
+    } on TimeoutException {
+      throw AIServiceException(
+        'The AI service took too long to respond. Please try again.',
+      );
+    } catch (error) {
+      final errorText = error.toString().toLowerCase();
+      final message = switch (true) {
+        _
+            when errorText.contains('404') ||
+                errorText.contains('not_found') ||
+                errorText.contains('no longer available') =>
+          'The AI model is currently unavailable. Please try again later.',
+        _
+            when errorText.contains('401') ||
+                errorText.contains('403') ||
+                errorText.contains('permission_denied') =>
+          'The AI service is not authorized. Please check its configuration.',
+        _
+            when errorText.contains('429') ||
+                errorText.contains('resource_exhausted') =>
+          'The AI service is busy. Please try again shortly.',
+        _ => 'Unable to generate a reply. Please try again.',
+      };
+      developer.log(
+        'AI service request failed (${error.runtimeType})',
+        name: 'AIService',
+      );
+      throw AIServiceException(message);
     }
   }
 
@@ -150,7 +188,11 @@ What would you like to know?""";
         location,
       );
       final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
+      final model = _model;
+      if (model == null) {
+        return _getFallbackCropRecommendation(soilData, weatherData);
+      }
+      final response = await model.generateContent(content);
 
       if (response.text != null && response.text!.isNotEmpty) {
         return _parseCropRecommendation(response.text!, soilData, weatherData);

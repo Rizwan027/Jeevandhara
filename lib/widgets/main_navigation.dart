@@ -18,6 +18,9 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   late int _currentIndex;
   late PageController _pageController;
+  final ValueNotifier<List<String>> _recommendedCrops = ValueNotifier(
+    const <String>[],
+  );
 
   @override
   void initState() {
@@ -29,6 +32,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   void dispose() {
     _pageController.dispose();
+    _recommendedCrops.dispose();
     super.dispose();
   }
 
@@ -62,11 +66,15 @@ class _MainNavigationState extends State<MainNavigation> {
             case 2:
               return const ChatScreenContent();
             case 3:
-              return const AdviceScreenContent();
+              return AdviceScreenContent(
+                recommendationNotifier: _recommendedCrops,
+              );
             case 4:
               return const ProfileScreen();
             default:
-              return const HomeScreenContent();
+              return HomeScreenContent(
+                recommendationNotifier: _recommendedCrops,
+              );
           }
         },
       ),
@@ -118,11 +126,16 @@ class _MainNavigationState extends State<MainNavigation> {
 
 // Wrapper widgets for each screen without their individual navigation bars
 class HomeScreenContent extends StatelessWidget {
-  const HomeScreenContent({super.key});
+  final ValueNotifier<List<String>>? recommendationNotifier;
+
+  const HomeScreenContent({super.key, this.recommendationNotifier});
 
   @override
   Widget build(BuildContext context) {
-    return const HomeScreen(showBottomNav: false);
+    return HomeScreen(
+      showBottomNav: false,
+      recommendationNotifier: recommendationNotifier,
+    );
   }
 }
 
@@ -145,10 +158,15 @@ class ChatScreenContent extends StatelessWidget {
 }
 
 class AdviceScreenContent extends StatelessWidget {
-  const AdviceScreenContent({super.key});
+  final ValueNotifier<List<String>>? recommendationNotifier;
+
+  const AdviceScreenContent({super.key, this.recommendationNotifier});
 
   @override
   Widget build(BuildContext context) {
-    return const AdviceScreen(showBottomNav: false);
+    return AdviceScreen(
+      showBottomNav: false,
+      recommendationNotifier: recommendationNotifier,
+    );
   }
 }

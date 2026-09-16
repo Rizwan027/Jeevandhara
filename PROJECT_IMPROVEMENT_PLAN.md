@@ -1,6 +1,6 @@
 # Jeevandhara Project Improvement Plan
 
-Read-only audit completed on 2026-09-09. This document is the master roadmap for future work. No application source files were changed during the audit.
+Read-only audit completed on 2026-09-09. This document is the master roadmap and live status tracker for future work. Statuses are updated only when implementation and validation are verified.
 
 ## Audit Scope and Verification Notes
 
@@ -20,6 +20,37 @@ Validation performed:
 
 Items marked **Needs Verification** require Firebase Console access, real-device testing, product decisions, or files/configuration not present in the repository.
 
+## Completed Implementation Milestones
+
+- Crop recommendation data was integrated from `Crop_recommendation.csv`.
+- A six-feature model was selected using N, P, K, temperature, humidity, and pH.
+- Rainfall was intentionally excluded because the dataset's rainfall semantics were insufficiently documented for the app's intended use.
+- An ExtraTrees model was selected and exported to ONNX.
+- The compatible ONNX model was validated against the Joblib model.
+- `CropMlService` was integrated into `AdviceScreen`.
+- ML top-3 predictions are displayed in the existing recommendation UI.
+- Gemini is used only to explain the primary ML-selected crop.
+- Physical Android testing confirmed the ML prediction flow works.
+- Physical Android testing confirmed the hybrid ML plus Gemini explanation flow works.
+
+## Current Security Limitation
+
+Gemini, OpenWeather, and Data.gov.in keys are currently handled through `.env` for development. This is not equivalent to secure production secret storage in a released Flutter APK because bundled client configuration can be extracted. Backend/proxy work remains required for production. T01 and T02 therefore remain incomplete.
+
+## Current Progress Snapshot
+
+### Completed
+
+T04, T07, T08, T11, T12, T13, T14, T15, T17, T18, T19, T20, T21, T28, and T33.
+
+### Partial
+
+T06, T09, T16, T22, T23, T24, T25, T26, T27, T29, T30, T31, T32, T34, T35, T36, T37, T39, T40, T41, and T45.
+
+### Remaining TODO
+
+All other T01-T46 tasks remain TODO, blocked, or require manual action as noted in the master task list.
+
 # 1. Application Overview
 
 ## Current purpose
@@ -37,7 +68,7 @@ The apparent target users are farmers and agriculture users who need localized, 
 3. Authenticated users select a language and view a three-page onboarding carousel.
 4. Onboarding opens the main navigation shell.
 5. Main tabs expose Home, Scan Crop, Chat, Advice, and Profile.
-6. Home requests location/weather data and displays dashboard information and static market content.
+6. Home requests location/weather data and displays dashboard information and trusted market content when available.
 7. Users can enter soil data, request crop advice, chat with an AI service, and select/capture a crop image.
 8. Profile displays the Firebase user, edits the name in Firestore, and signs out.
 
@@ -69,7 +100,7 @@ The app is a visually developed prototype, not a production-ready agricultural p
 
 ## C-01: Client-side API secrets are hardcoded
 
-- **Problem:** Gemini and OpenWeather API keys are present in `lib/services/ai_service.dart` and `lib/services/weather_service.dart`.
+- **Problem:** Gemini, OpenWeather, and Data.gov.in API keys are handled through development `.env` configuration and remain client-side secrets.
 - **Why it matters:** APK users can extract keys, abuse quotas, cause billing, and bypass intended usage controls.
 - **Recommended solution:** Rotate both keys immediately, remove them from source and Git history, and route calls through an authenticated backend or tightly restricted proxy. Add quota, abuse, and secret-scanning controls.
 - **Priority:** CRITICAL / P0.
@@ -146,7 +177,7 @@ The app is a visually developed prototype, not a production-ready agricultural p
 
 ## C-12: Static/fallback information is presented as live
 
-- **Problem:** Market information is static, fallback weather is not clearly labeled, and crop recommendations contain constants.
+- **Problem:** Market information now has a trusted source and explicit loading/error states, but production secret mediation and broader freshness/caching policy remain.
 - **Why it matters:** Users cannot distinguish current data from estimates or sample content.
 - **Recommended solution:** Add source/timestamp/stale labels, retry states, or explicitly label sample/demo values.
 - **Priority:** HIGH / P1.
@@ -169,7 +200,7 @@ The app is a visually developed prototype, not a production-ready agricultural p
 
 ## Home dashboard
 
-- **Current problem:** The screen is approximately 2,032 lines, mixes dashboard, navigation, weather, market, alerts, and business logic, and includes static market/live labels. Several small text sizes, fixed rows, and color-coded cards may fail on narrow screens or large text.
+- **Current problem:** The screen is approximately 2,032 lines and mixes dashboard, navigation, weather, market, alerts, and business logic. Several small text sizes, fixed rows, and color-coded cards may fail on narrow screens or large text.
 - **Recommended improvement:** Split sections, use responsive layouts, expose loading/error/stale states, add refresh, label sample data, and use semantic controls.
 - **Expected benefit:** Easier maintenance and clearer trust in dashboard data.
 - **Priority:** P1/P2.
@@ -229,7 +260,7 @@ The app is a visually developed prototype, not a production-ready agricultural p
 | AI chat | Gemini service with fallback | Key exposure, silent fallback, no cancellation/limits | Backend mediation, structured responses, clear availability state | More reliable advice | Authenticated proxy and quotas | P0/P1 |
 | Crop scan | Image picker and mock analysis | Image ignored; false health/disease output | Real inference or honest prototype state | Safer decisions | Image upload/privacy/consent | P0 |
 | Crop recommendations | Keyword/static extraction | Unreachable screen and fabricated detail data | Complete structured flow or remove stale code | Useful recommendations | Typed recommendation model | P1 |
-| Market information | Static values and alerts | Presented as live | Live source with timestamp or sample label | Better decisions | Data source and caching | P1 |
+| Market information | Data.gov.in/AGMARKNET records with source and arrival date | Production secret mediation and broader freshness/caching policy remain | Keep trusted source, timestamp/source labels, cache, and stale handling | Better decisions | Data source and caching | P1 |
 | Navigation | PageView plus embedded screen nav | Duplicate shells, inconsistent back behavior, missing route | One authenticated shell and route strategy | Predictable movement | Router/guard tests | P0 |
 | Profile tab | Recently implemented Firebase profile | No loading/error distinctions | Complete account-management UX | Better self-service | Auth and Firestore state | P1 |
 
@@ -269,7 +300,7 @@ The app is a visually developed prototype, not a production-ready agricultural p
 
 | Feature | What it does and why | High-level implementation | Priority |
 |---|---|---|---|
-| Live market data | Replaces static prices | Trusted source, timestamp, cache, stale label | P1 |
+| Live market data | Official Data.gov.in/AGMARKNET mandi records | Freshness caching and production secret mediation remain | P1 |
 | Daily forecast | Presents weather in user-meaningful periods | Aggregate API periods by date | P1 |
 | Safety and expert escalation | Reduces risk from agricultural recommendations | Confidence, disclaimers, local expert/contact path | P1 |
 | Complete settings | Centralizes language, permissions, account, notifications | Settings screen under one shell | P1 |
@@ -431,7 +462,7 @@ Actions:
 ## Version 1.2 — Useful daily workflow
 
 - Live weather with cached daily forecasts.
-- Verified market data.
+- Market freshness, caching, and production secret mediation.
 - User-scoped soil history.
 - Crop/location/season personalization.
 - Settings and notification preferences.
@@ -457,7 +488,7 @@ Actions:
 
 # 13. Prioritized Master Task List
 
-Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. Statuses below reflect the implementation state as of 2026-09-09.
+Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. Statuses below are maintained as a live tracker and reflect verified implementation state through the latest roadmap update.
 
 | ID | Task | Category | Priority | Difficulty | Dependencies | Status / implementation note |
 |----|------|----------|----------|------------|--------------|------------------------------|
@@ -468,34 +499,34 @@ Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. Statuses belo
 | T05 | Generate/configure Firebase options for supported platforms | Platform/Firebase | P0 | Medium | Platform decision | [BLOCKED - MANUAL ACTION] Generate and register Firebase configuration for each supported platform. |
 | T06 | Replace or clearly disable fabricated crop diagnosis | Safety/AI | P0 | Hard | T02 | [PARTIALLY COMPLETED] Mock diagnosis is disabled and labeled unavailable; validated real image inference remains. |
 | T07 | Fix/register the `/input_data` route | Navigation | P0 | Easy | T08 | [COMPLETED] Registered the `/input_data` route. |
-| T08 | Consolidate to one authenticated navigation shell | Architecture | P0 | Hard | Product flow decision | [PARTIALLY COMPLETED] MainNavigation is the only rendered bottom-navigation shell and has widget coverage; legacy push paths and dead builders remain in older screens. |
+| T08 | Consolidate to one authenticated navigation shell | Architecture | P0 | Hard | Product flow decision | [COMPLETED] MainNavigation is the authenticated navigation shell. Duplicate feature-level bottom navigation builders were removed, and the existing PageView/tab architecture is preserved. |
 | T09 | Configure protected release signing | Android/Release | P0 | Medium | Signing credentials | [PARTIALLY COMPLETED] Debug signing was removed and `key.properties` support added; keystore and CI secrets remain to be configured. |
 | T10 | Review and resolve deleted platform files safely | Platform/Git | P0 | Medium | Owner confirmation | [BLOCKED - MANUAL ACTION] Owner must review intentional iOS/macOS file deletions and restore any required platform assets. |
-| T11 | Replace stale counter widget test | Testing | P0 | Easy | T08 | [COMPLETED] Replaced the counter test with a startup recovery smoke test. |
+| T11 | Replace stale counter widget test | Testing | P0 | Easy | T08 | [COMPLETED] Existing widget tests were updated/replaced as part of the current suite, which passes. |
 | T12 | Add email verification and password reset | Authentication | P1 | Medium | Firebase Auth | [COMPLETED] Added verification email, verification status/resend action, and password reset. |
 | T13 | Add account deletion and auth lifecycle recovery | Authentication | P1 | Medium | T03/T12 | [COMPLETED] Added reauthentication-protected profile deletion and recent-login error handling. |
 | T14 | Make signup profile provisioning retryable/consistent | Authentication | P1 | Medium | T03 | [COMPLETED] Auth creation is retained while profile and verification setup failures are reported as retryable follow-up work. |
 | T15 | Persist onboarding completion and selected language | UX/State | P1 | Easy | Auth flow | [COMPLETED] Added per-user persistence plus Settings controls to change language and revisit onboarding. |
 | T16 | Complete localization for all screens and errors | UX/Localization | P1 | Medium | T08 | [PARTIALLY COMPLETED] Added translated shared navigation, account/settings, and permission keys with locale tests; feature labels and errors remain hardcoded in many screens. |
-| T17 | Load, validate, and safely persist soil data | Data/UX | P1 | Medium | Data policy | [COMPLETED] Added load-on-entry, corruption handling, service-layer range validation, and immediate save feedback. |
-| T18 | Scope soil data per authenticated user or document local-only behavior | Data/Security | P1 | Medium | T03/T17 | [COMPLETED] Soil preferences use authenticated UID-specific local keys. |
-| T19 | Add weather timeout, validation, retry, cache, and stale state | Weather | P1 | Medium | T02 | [PARTIALLY COMPLETED] Restored runtime OpenWeather requests via `OPENWEATHER_API_KEY` dart-define, bounded location/geocoding/HTTP operations, status/parsing diagnostics, cache preservation, and explicit unavailable state; backend mediation and physical-device verification remain. |
-| T20 | Reuse one location lookup and aggregate daily forecasts | Weather/Performance | P1 | Medium | T19 | [PARTIALLY COMPLETED] Restored permission/location reuse, coordinate validation, geocoding fallback, and daily forecast aggregation; shared live backend integration and physical-device verification remain. |
-| T21 | Label/remove static market data and implement trusted source | Product/Data | P1 | Medium | Data source | [PARTIALLY COMPLETED] Static values are labeled sample data; trusted live source remains unavailable. |
+| T17 | Load, validate, and safely persist soil data | Data/UX | P1 | Medium | Data policy | [COMPLETED] Soil N/P/K/pH input is validated and persisted; soil data is scoped to the authenticated user. The soil input UI no longer asks for soil moisture, and weather supplies temperature/humidity separately. |
+| T18 | Scope soil data per authenticated user or document local-only behavior | Data/Security | P1 | Medium | T03/T17 | [COMPLETED] Soil persistence uses a user-scoped storage key, and cleanup behavior was tested. |
+| T19 | Add weather timeout, validation, retry, cache, and stale state | Weather | P1 | Medium | T02 | [COMPLETED] WeatherService was restored from stubs. OpenWeather integration works with timeout/status handling, coordinate validation, cached location fallback, diagnostics, and dotenv-based local development configuration. |
+| T20 | Reuse one location lookup and aggregate daily forecasts | Weather/Performance | P1 | Medium | T19 | [COMPLETED] Weather/location flow was improved and daily forecast aggregation was implemented. |
+| T21 | Label/remove static market data and implement trusted source | Product/Data | P1 | Medium | Data source | [COMPLETED] Static sample market data was removed from Home. The market section now uses official Data.gov.in/AGMARKNET-backed mandi data with dotenv API-key configuration, typed commodity/modal-price/market/state/arrival-date/source parsing, verified server-side filtering, Maharashtra defaults, and capped results. Unsupported date/sort parameters were deliberately not used. T21-B extends this with MainNavigation-owned in-memory ML-to-market integration: Advice publishes successful top-3 crop names, Home requests those commodities, duplicate requests are prevented, and valid existing market data is preserved on refresh failure. |
 | T22 | Add explicit loading/error/empty/retry states across features | UX/Reliability | P1 | Medium | T08 | [PARTIALLY COMPLETED] Weather now has bounded loading, cached/stale preservation, unavailable, refresh, and structured error states; feature-wide retry coverage remains. |
-| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | [PARTIALLY COMPLETED] Scan now discloses unavailable confidence/diagnosis and expert escalation; real source metadata and validated AI remain blocked. |
+| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | [PARTIALLY COMPLETED] ML confidence is displayed with crop recommendations, and Gemini explains the selected ML crop rather than making the crop decision. Prompt safeguards address fabricated prices/costs/subsidies and unsafe specific treatment/dosage claims. Expert escalation is not implemented yet. |
 | T24 | Complete or remove share, notifications, settings, and attachment actions | Product/UX | P1 | Medium | Product decision | [PARTIALLY COMPLETED] Settings is implemented; share, notifications, and chat attachments remain incomplete. |
 | T25 | Fix async lifecycle guards and request cancellation everywhere | Reliability | P1 | Medium | T22 | [PARTIALLY COMPLETED] Added mounted/request-generation guards for weather plus bounded location/geocoding/HTTP operations, scan, Advice, delayed chat scroll, and explicit auth loading/error exits; remaining async flows still need coverage. |
 | T26 | Add camera/photo/location permission explanations | Android/UX | P1 | Easy | Platform testing | [PARTIALLY COMPLETED] Camera denied/permanently-denied explanations and actionable settings are present; location-specific UX remains. |
-| T27 | Add responsive layouts for narrow, large-text, tablet, and landscape states | UI/Responsive | P1 | Medium | T08 | [PARTIALLY COMPLETED] Soil fields and Home header, weather, soil, market, and analysis rows now handle narrow/large text layouts; broader screen/device-size verification remains. |
+| T27 | Add responsive layouts for narrow, large-text, tablet, and landscape states | UI/Responsive | P1 | Medium | T08 | [PARTIALLY COMPLETED] Several narrow-screen/320px and large-text overflow issues were fixed; soil input and Home layout responsiveness were improved. Full tablet/landscape/large-text coverage is not complete. |
 | T28 | Complete profile loading/error/empty and safe avatar initial handling | Profile | P1 | Easy | T03 | [COMPLETED] Added profile loading/error states, safe initials, verification status, and account actions. |
-| T29 | Add semantics, tooltips, contrast, and accessible controls | Accessibility | P1 | Medium | T08 | [PARTIALLY COMPLETED] Added navigation labels, refresh/settings/permission tooltips, scan escalation semantics, password visibility state labels, and Home notification semantics; full screen-reader, contrast, and large-text coverage remains. |
-| T30 | Split Home and feature screens into focused widgets/controllers | Architecture | P2 | Hard | T08 | [PARTIALLY COMPLETED] Extracted Home's market-price section into a focused widget while keeping navigation and weather/business state in HomeScreen; further safe section extraction remains. |
+| T29 | Add semantics, tooltips, contrast, and accessible controls | Accessibility | P1 | Medium | T08 | [PARTIALLY COMPLETED] Semantic labels and tooltips were added to several controls, with accessibility improvements in tested areas. A full accessibility audit and coverage are not complete. |
+| T30 | Split Home and feature screens into focused widgets/controllers | Architecture | P2 | Hard | T08 | [PARTIALLY COMPLETED] HomeMarketSection was extracted; additional Home decomposition remains. |
 | T31 | Extract typed models and repositories/services | Architecture | P2 | Hard | T30 | [PARTIALLY COMPLETED] Typed weather/soil service models exist; repository and controller separation remains. |
 | T32 | Remove duplicate navigation and dead widgets/methods | Cleanup | P2 | Medium | T08/T30 | [PARTIALLY COMPLETED] Main shell usage is established and all four confirmed feature-level duplicate navigation builders were removed; other dead widgets/methods remain. |
 | T33 | Remove confirmed unused dependencies | Cleanup | P2 | Easy | Usage verification | [COMPLETED] Removed `mobile_scanner`, `flutter_svg`, and `cupertino_icons`. |
 | T34 | Replace deprecated `withOpacity` usage | Code quality | P2 | Easy | None | [PARTIALLY COMPLETED] Automated cleanup was attempted; many deprecated opacity calls remain in legacy screens. |
-| T35 | Replace production `print` calls with structured logging | Code quality | P2 | Easy | Logging choice | [COMPLETED] Replaced production print calls with `dart:developer` logging. |
+| T35 | Replace production `print` calls with structured logging | Code quality | P2 | Easy | Logging choice | [PARTIALLY COMPLETED] Structured diagnostic logging was introduced in areas such as weather and AI; a complete production-wide logging migration is not complete. |
 | T36 | Add unit tests for weather, soil, recommendations, localization, and storage | Testing | P2 | Medium | T31 | [PARTIALLY COMPLETED] Added soil validation and user-scoped storage, weather parsing/daily aggregation, unavailable scan, fallback recommendations, and supported-locales tests; broader service coverage remains. |
 | T37 | Add widget tests for auth, routing, profile, and async states | Testing | P2 | Medium | T08/T22 | [PARTIALLY COMPLETED] Added startup recovery, localized five-tab shell, password visibility accessibility, and auth loading/error tests; profile and broader async-state tests remain. |
 | T38 | Add Firebase/device permission integration tests | Testing | P2 | Hard | T03/T26 | [NOT STARTED] |
@@ -520,7 +551,7 @@ Deploy Firestore rules, restrict Firebase keys, complete platform Firebase setup
 
 ## Phase 3 — Core functionality
 
-Consolidate navigation, make soil data reliable and user-scoped, improve weather parsing/caching, and replace static/live ambiguity. Core flows must be correct before visual polish.
+Consolidate navigation, make soil data reliable and user-scoped, improve weather parsing/caching, and complete the remaining market freshness/security work. Core flows must be correct before visual polish.
 
 ## Phase 4 — UI/UX and accessibility
 
@@ -573,7 +604,7 @@ Scores reflect the audited source and are not a substitute for real-device/produ
 2. Persist onboarding/language.
 3. Make soil data load, validate, and scope correctly.
 4. Add weather cache, timeout, daily aggregation, and retry.
-5. Stop labeling static/fallback data as live.
+5. Complete market freshness/caching and production secret mediation.
 6. Add explicit loading/error/empty states.
 7. Localize all user-facing strings.
 8. Add safety disclaimers and expert escalation.
@@ -582,7 +613,7 @@ Scores reflect the audited source and are not a substitute for real-device/produ
 
 ## Top 10 features worth adding
 
-1. Verified live market data.
+1. Market freshness, caching, and production secret mediation.
 2. Daily cached forecast.
 3. User-scoped soil history.
 4. Crop/location/season personalization.
