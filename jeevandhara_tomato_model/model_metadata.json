@@ -1,0 +1,54 @@
+{
+  "model_name": "Jeevandhara experimental tomato classifier",
+  "architecture": "MobileNetV3 Small",
+  "model_format": "ONNX",
+  "input": {
+    "name": "input",
+    "layout": "NCHW",
+    "shape": [
+      "batch",
+      3,
+      224,
+      224
+    ],
+    "dtype": "float32",
+    "color_space": "RGB",
+    "preprocessing": [
+      "Resize shortest edge to 256 pixels using bilinear interpolation",
+      "Center crop to 224x224",
+      "Convert pixels to float32 in [0,1]",
+      "Normalize with ImageNet mean [0.485,0.456,0.406]",
+      "Normalize with ImageNet std [0.229,0.224,0.225]"
+    ]
+  },
+  "output": {
+    "shape": [
+      "batch",
+      8
+    ],
+    "meaning": "Raw class logits, not probabilities",
+    "class_names_in_output_order": [
+      "Tomato___Bacterial_spot",
+      "Tomato___Early_blight",
+      "Tomato___Late_blight",
+      "Tomato___Leaf_Mold",
+      "Tomato___Septoria_leaf_spot",
+      "Tomato___Spider_mites Two-spotted_spider_mite",
+      "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+      "Tomato___healthy"
+    ]
+  },
+  "evaluation": {
+    "test_images": 2291,
+    "pytorch_accuracy": 0.9673,
+    "onnx_accuracy": 0.9673,
+    "pytorch_onnx_predictions_identical": true,
+    "scope": "Curated held-out dataset; field performance not established"
+  },
+  "limitations": [
+    "Experimental college-project model; not validated for field diagnosis.",
+    "Supports only the eight listed tomato classes.",
+    "No calibrated uncertainty or unknown-disease rejection threshold has been validated.",
+    "Dataset and model redistribution rights require further verification."
+  ]
+}

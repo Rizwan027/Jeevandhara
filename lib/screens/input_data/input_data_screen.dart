@@ -75,16 +75,32 @@ class _InputDataScreenState extends State<InputDataScreen>
   }
 
   Future<void> _loadSavedData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    final data = await SoilDataService.getSoilData(userId: user.uid);
-    if (!mounted || data == null) return;
-    _phValue = data['ph'] ?? _phValue;
-    _moistureValue = data['moisture'] ?? _moistureValue;
-    _nitrogenValue = data['nitrogen'] ?? _nitrogenValue;
-    _phosphorusValue = data['phosphorus'] ?? _phosphorusValue;
-    _potassiumValue = data['potassium'] ?? _potassiumValue;
-    setState(_syncControllersWithSliders);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final data = await SoilDataService.getSoilData(userId: user.uid);
+      if (!mounted || data == null) return;
+      _phValue = data['ph'] ?? _phValue;
+      _moistureValue = data['moisture'] ?? _moistureValue;
+      _nitrogenValue = data['nitrogen'] ?? _nitrogenValue;
+      _phosphorusValue = data['phosphorus'] ?? _phosphorusValue;
+      _potassiumValue = data['potassium'] ?? _potassiumValue;
+      setState(_syncControllersWithSliders);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to load existing soil data.'),
+          backgroundColor: Colors.orange[800],
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: _loadSavedData,
+          ),
+        ),
+      );
+    }
   }
 
   void _syncControllersWithSliders() {

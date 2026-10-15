@@ -46,6 +46,26 @@ class MarketDataService {
   static const _maxReturnedRecords = 10;
   static const _recordsPerCommodity = 2;
 
+  static const Map<String, String> _cropToAgmarknetMap = {
+    'chickpea': 'Gram',
+    'pigeonpeas': 'Arhar (Tur/Red Gram)(Whole)',
+    'blackgram': 'Black Gram (Urd Beans)(Whole)',
+    'mungbean': 'Green Gram (Moong)(Whole)',
+    'kidneybeans': 'Rajmah',
+    'muskmelon': 'Karbuja(Musk Melon)',
+    'wheat': 'Wheat',
+    'rice': 'Rice',
+    'cotton': 'Cotton',
+    'mustard': 'Mustard',
+    'maize': 'Maize',
+  };
+
+  static String mapCommodityName(String rawName) {
+    final trimmed = rawName.trim();
+    final normalizedKey = trimmed.toLowerCase();
+    return _cropToAgmarknetMap[normalizedKey] ?? trimmed;
+  }
+
   Future<List<MarketPrice>> fetchDailyPrices({
     String? state,
     List<String>? commodities,
@@ -62,7 +82,7 @@ class MarketDataService {
     final selectedCommodities = commodities == null
         ? _defaultCommodities
         : commodities
-              .map((commodity) => commodity.trim())
+              .map((commodity) => mapCommodityName(commodity))
               .where((commodity) => commodity.isNotEmpty)
               .toSet()
               .toList(growable: false);
@@ -88,6 +108,9 @@ class MarketDataService {
     final prices = results.expand((items) => items).toList()
       ..sort((a, b) => b.priceDate.compareTo(a.priceDate));
     if (prices.isEmpty) {
+      if (commodities != null) {
+        return const [];
+      }
       throw const MarketDataException(
         'Market data response contained no records.',
       );

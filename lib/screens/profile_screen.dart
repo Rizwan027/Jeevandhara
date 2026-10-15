@@ -2,11 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   static const _green = Color(0xFF2E7D32);
   static const _lightGreen = Color(0xFFF8FFFE);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  int _streamKey = 0;
 
   Future<void> _editName(
     BuildContext context,
@@ -18,15 +25,43 @@ class ProfileScreen extends StatelessWidget {
       builder: (_) => _EditNameDialog(initialName: currentName),
     );
 
-    if (name == null || name == currentName) return;
+    if (name == null || name == currentName || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text('Updating profile name...'),
+          ],
+        ),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
     try {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'name': name,
       }, SetOptions(merge: true));
       await user.updateDisplayName(name);
+      if (!context.mounted) return;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Profile name updated successfully.')),
+      );
     } on FirebaseException catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
         SnackBar(content: Text(error.message ?? 'Could not update your name.')),
       );
     }
@@ -140,15 +175,16 @@ class ProfileScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: _lightGreen,
+      backgroundColor: ProfileScreen._lightGreen,
       appBar: AppBar(
         title: const Text('Profile'),
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
-        foregroundColor: _green,
+        foregroundColor: ProfileScreen._green,
         elevation: 0,
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        key: ValueKey(_streamKey),
         stream: FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -156,7 +192,43 @@ class ProfileScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
-              child: Text('Unable to load profile: ${snapshot.error}'),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_off, size: 48, color: Colors.red),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Unable to load profile',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _streamKey++;
+                        });
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: ProfileScreen._green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -193,20 +265,20 @@ class ProfileScreen extends StatelessWidget {
                       backgroundColor: const Color(0xFFE8F5E9),
                       child: Text(
                         initial,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 34,
                           fontWeight: FontWeight.bold,
-                          color: _green,
+                          color: ProfileScreen._green,
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: _green,
+                        color: ProfileScreen._green,
                       ),
                     ),
                     const SizedBox(height: 4),

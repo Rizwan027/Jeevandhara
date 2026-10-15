@@ -41,11 +41,11 @@ Gemini, OpenWeather, and Data.gov.in keys are currently handled through `.env` f
 
 ### Completed
 
-T04, T07, T08, T11, T12, T13, T14, T15, T17, T18, T19, T20, T21, T28, and T33.
+T04, T07, T08, T11, T12, T13, T14, T15, T17, T18, T19, T20, T21, T22, T28, and T33.
 
 ### Partial
 
-T06, T09, T16, T22, T23, T24, T25, T26, T27, T29, T30, T31, T32, T34, T35, T36, T37, T39, T40, T41, and T45.
+T06, T09, T16, T23, T24, T25, T26, T27, T29, T30, T31, T32, T34, T35, T36, T37, T39, T40, T41, and T45.
 
 ### Remaining TODO
 
@@ -513,8 +513,8 @@ Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. Statuses belo
 | T19 | Add weather timeout, validation, retry, cache, and stale state | Weather | P1 | Medium | T02 | [COMPLETED] WeatherService was restored from stubs. OpenWeather integration works with timeout/status handling, coordinate validation, cached location fallback, diagnostics, and dotenv-based local development configuration. |
 | T20 | Reuse one location lookup and aggregate daily forecasts | Weather/Performance | P1 | Medium | T19 | [COMPLETED] Weather/location flow was improved and daily forecast aggregation was implemented. |
 | T21 | Label/remove static market data and implement trusted source | Product/Data | P1 | Medium | Data source | [COMPLETED] Static sample market data was removed from Home. The market section now uses official Data.gov.in/AGMARKNET-backed mandi data with dotenv API-key configuration, typed commodity/modal-price/market/state/arrival-date/source parsing, verified server-side filtering, Maharashtra defaults, and capped results. Unsupported date/sort parameters were deliberately not used. T21-B extends this with MainNavigation-owned in-memory ML-to-market integration: Advice publishes successful top-3 crop names, Home requests those commodities, duplicate requests are prevented, and valid existing market data is preserved on refresh failure. |
-| T22 | Add explicit loading/error/empty/retry states across features | UX/Reliability | P1 | Medium | T08 | [PARTIALLY COMPLETED] Weather now has bounded loading, cached/stale preservation, unavailable, refresh, and structured error states; feature-wide retry coverage remains. |
-| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | [PARTIALLY COMPLETED] ML confidence is displayed with crop recommendations, and Gemini explains the selected ML crop rather than making the crop decision. Prompt safeguards address fabricated prices/costs/subsidies and unsafe specific treatment/dosage claims. Expert escalation is not implemented yet. |
+| T22 | Add explicit loading/error/empty/retry states across features | UX/Reliability | P1 | Medium | T08 | [COMPLETED] Added comprehensive loading/error/empty/retry states: Home (weather & market retry/cache/error states), Advice (ML/weather loading/error/retry & trust banner), Scan (analyzing/result/unavailable error card & reset), Chat (distinct error bubble & inline prompt retry), Profile (StreamBuilder error card with stream retry & edit name loading indicator), and InputData (initial load failure retry & saving state). |
+| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | [PARTIALLY COMPLETED] ML confidence is displayed with crop recommendations, and Gemini explains the selected ML crop. Prompt safeguards address fabricated prices/costs/subsidies and unsafe specific treatment/dosage claims in AIService. AdviceScreen includes a Safety & Expert Escalation card, and ChatScreen provides a safety notice bar. Physical device validation remains. |
 | T24 | Complete or remove share, notifications, settings, and attachment actions | Product/UX | P1 | Medium | Product decision | [PARTIALLY COMPLETED] Settings is implemented; share, notifications, and chat attachments remain incomplete. |
 | T25 | Fix async lifecycle guards and request cancellation everywhere | Reliability | P1 | Medium | T22 | [PARTIALLY COMPLETED] Added mounted/request-generation guards for weather plus bounded location/geocoding/HTTP operations, scan, Advice, delayed chat scroll, and explicit auth loading/error exits; remaining async flows still need coverage. |
 | T26 | Add camera/photo/location permission explanations | Android/UX | P1 | Easy | Platform testing | [PARTIALLY COMPLETED] Camera denied/permanently-denied explanations and actionable settings are present; location-specific UX remains. |

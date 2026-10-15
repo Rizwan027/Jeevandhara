@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../advice/advice_screen.dart';
 import '../chat/chat_screen.dart';
 import '../input_data/input_data_screen.dart';
@@ -8,6 +9,7 @@ import 'home_market_section.dart';
 import '../../services/weather_service.dart';
 import '../../services/ai_service.dart';
 import '../../services/market_data_service.dart';
+import '../../services/soil_data_service.dart';
 import '../../localization/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -43,6 +45,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _marketRequestId = 0;
   List<String>? _lastRequestedCommodities;
 
+  Map<String, double>? _soilData;
+  bool _isLoadingSoil = true;
+
   @override
   void initState() {
     super.initState();
@@ -60,10 +65,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
     _animationController.forward();
 
-    // Load weather data
+    // Load weather, market, and soil data
     _loadWeatherData();
     _loadMarketData();
+    _loadSoilData();
     widget.recommendationNotifier?.addListener(_onRecommendationsChanged);
+  }
+
+  Future<void> _loadSoilData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            _soilData = null;
+            _isLoadingSoil = false;
+          });
+        }
+        return;
+      }
+      final data = await SoilDataService.getSoilData(userId: user.uid);
+      if (mounted) {
+        setState(() {
+          _soilData = data;
+          _isLoadingSoil = false;
+        });
+      }
+    } catch (e) {
+      developer.log('Error loading soil data', error: e, name: 'HomeScreen');
+      if (mounted) {
+        setState(() {
+          _isLoadingSoil = false;
+        });
+      }
+    }
   }
 
   void _onRecommendationsChanged() {
@@ -373,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const InputDataScreen()),
-            ),
+            ).then((_) => _loadSoilData()),
           ),
         ),
       ],
@@ -1079,6 +1114,104 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildEnhancedSoilStatusCard() {
+    if (_isLoadingSoil) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFF10B981)),
+        ),
+      );
+    }
+
+    if (_soilData == null || _soilData!.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.science_outlined,
+                    color: Color(0xFF10B981),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.getText('soil_analysis'),
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No soil data saved yet. Add your soil test metrics to get personalized crop recommendations.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InputDataScreen(),
+                  ),
+                ).then((_) => _loadSoilData());
+              },
+              icon: const Icon(Icons.add_circle_outline, size: 18),
+              label: const Text('Add Soil Data'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final ph = _soilData!['ph'];
+    final n = _soilData!['nitrogen'];
+    final p = _soilData!['phosphorus'];
+    final k = _soilData!['potassium'];
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1132,17 +1265,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Expanded(
                 child: _buildSoilParameter(
                   AppLocalizations.of(context)!.getText('ph_level_short'),
-                  '6.5',
-                  AppLocalizations.of(context)!.getText('good'),
+                  ph != null ? ph.toStringAsFixed(1) : '--',
+                  ph != null && ph >= 6.0 && ph <= 7.5 ? 'Optimal' : 'Saved',
                   Colors.green,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildSoilParameter(
-                  AppLocalizations.of(context)!.getText('moisture'),
-                  '68%',
-                  AppLocalizations.of(context)!.getText('optimal'),
+                  AppLocalizations.of(context)!.getText('nitrogen'),
+                  n != null ? n.toStringAsFixed(0) : '--',
+                  'Saved',
                   Colors.blue,
                 ),
               ),
@@ -1153,19 +1286,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               Expanded(
                 child: _buildSoilParameter(
-                  AppLocalizations.of(context)!.getText('nitrogen'),
-                  AppLocalizations.of(context)!.getText('medium'),
-                  AppLocalizations.of(context)!.getText('fair'),
+                  'Phosphorus (P)',
+                  p != null ? p.toStringAsFixed(0) : '--',
+                  'Saved',
                   Colors.orange,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildSoilParameter(
-                  AppLocalizations.of(context)!.getText('temperature'),
-                  '24°C',
-                  AppLocalizations.of(context)!.getText('good'),
-                  Colors.green,
+                  'Potassium (K)',
+                  k != null ? k.toStringAsFixed(0) : '--',
+                  'Saved',
+                  Colors.purple,
                 ),
               ),
             ],

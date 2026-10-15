@@ -7,6 +7,7 @@ import '../../services/ai_service.dart';
 import '../../services/crop_ml_service.dart';
 import '../../services/weather_service.dart';
 import '../../services/soil_data_service.dart';
+import '../../services/market_data_service.dart';
 
 class AdviceScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -32,8 +33,14 @@ class _AdviceScreenState extends State<AdviceScreen>
   bool isLoading = true;
   List<Map<String, dynamic>> recommendedCrops = [];
   final CropMlService _cropMlService = CropMlService();
+  final MarketDataService _marketDataService = MarketDataService();
+  List<MarketPrice> _marketPrices = [];
+  bool _isLoadingMarket = true;
+  bool _marketHasError = false;
+  int _marketRequestId = 0;
   bool _usingMlRecommendations = false;
-  bool weatherUnavailable = false;
+  WeatherObservationSource weatherSource = WeatherObservationSource.unavailable;
+  bool weatherIsStale = false;
   String? loadError;
   int _requestId = 0;
 
@@ -73,39 +80,39 @@ class _AdviceScreenState extends State<AdviceScreen>
           ? null
           : await SoilDataService.getSoilData(userId: user.uid);
 
-      // Load weather data with fallback
+      // Use a live observation or an explicitly identified cached observation.
       try {
-        final weatherService = WeatherService();
-        final weather = await weatherService.getCurrentWeather();
-        if (weather != null) {
-          weatherUnavailable = false;
-          weatherData = {
-            'temperature': weather.temperature,
-            'humidity': weather.humidity,
-            'rainfall': 800.0,
-          };
-        } else {
-          weatherUnavailable = true;
-          weatherData = _getDefaultWeatherData();
-        }
-      } catch (e) {
-        weatherUnavailable = true;
-        weatherData = _getDefaultWeatherData();
+        final observation = await WeatherService().getWeatherObservation();
+        weatherSource = observation.source;
+        weatherIsStale = observation.isStale;
+        weatherData = observation.recommendationInputs;
+      } catch (_) {
+        weatherSource = WeatherObservationSource.unavailable;
+        weatherIsStale = false;
+        weatherData = null;
       }
 
-      // Prefer the ML predictions and retain the seasonal rules as fallback.
-      try {
-        final mlRecommendations = await _generateMlRecommendations();
-        if (mlRecommendations == null) {
+      if (weatherData == null) {
+        recommendedCrops = [];
+        _usingMlRecommendations = false;
+        if (mounted && requestId == _requestId) {
+          widget.recommendationNotifier?.value = const [];
+        }
+      } else {
+        // Prefer the ML predictions and retain the seasonal rules as fallback.
+        try {
+          final mlRecommendations = await _generateMlRecommendations();
+          if (mlRecommendations == null) {
+            _usingMlRecommendations = false;
+            recommendedCrops = _generateCropRecommendations();
+          } else {
+            _usingMlRecommendations = true;
+            recommendedCrops = mlRecommendations;
+          }
+        } catch (_) {
           _usingMlRecommendations = false;
           recommendedCrops = _generateCropRecommendations();
-        } else {
-          _usingMlRecommendations = true;
-          recommendedCrops = mlRecommendations;
         }
-      } catch (_) {
-        _usingMlRecommendations = false;
-        recommendedCrops = _generateCropRecommendations();
       }
 
       if (!mounted || requestId != _requestId) return;
@@ -114,6 +121,7 @@ class _AdviceScreenState extends State<AdviceScreen>
         loadError = null;
       });
       _animationController.forward();
+      _loadMarketPrices();
     } catch (e) {
       if (!mounted || requestId != _requestId) return;
       setState(() {
@@ -124,8 +132,37 @@ class _AdviceScreenState extends State<AdviceScreen>
     }
   }
 
-  Map<String, dynamic> _getDefaultWeatherData() {
-    return {'temperature': 25.0, 'humidity': 65.0, 'rainfall': 800.0};
+  Future<void> _loadMarketPrices() async {
+    final requestId = ++_marketRequestId;
+    if (mounted) {
+      setState(() {
+        _isLoadingMarket = true;
+        _marketHasError = false;
+      });
+    }
+    try {
+      final cropNames = recommendedCrops
+          .map((c) => (c['name'] as String).trim())
+          .where((name) => name.isNotEmpty)
+          .toList(growable: false);
+
+      final prices = await _marketDataService.fetchDailyPrices(
+        commodities: cropNames.isEmpty ? null : cropNames,
+      );
+      if (!mounted || requestId != _marketRequestId) return;
+      setState(() {
+        _marketPrices = prices;
+        _isLoadingMarket = false;
+        _marketHasError = false;
+      });
+    } catch (e) {
+      if (!mounted || requestId != _marketRequestId) return;
+      setState(() {
+        _marketPrices = [];
+        _isLoadingMarket = false;
+        _marketHasError = true;
+      });
+    }
   }
 
   Future<List<Map<String, dynamic>>?> _generateMlRecommendations() async {
@@ -206,7 +243,6 @@ class _AdviceScreenState extends State<AdviceScreen>
               'ML prediction confidence: ${(crop.probability * 100).toStringAsFixed(1)}%',
           'expectedYield': 'Model prediction',
           'duration': 'Model prediction',
-          'profit': 'Model prediction',
           'icon': FontAwesomeIcons.seedling,
           'color': const Color(0xFF4CAF50),
           'source': 'ML model',
@@ -230,10 +266,10 @@ class _AdviceScreenState extends State<AdviceScreen>
     final month = DateTime.now().month;
     String season = _getCurrentSeason(month);
 
-    // Default values
+    // Keep the rule-based fallback limited to observed temperature and soil pH.
     final ph = soilData?['ph'] ?? 6.5;
-    final temperature = weatherData?['temperature'] ?? 25.0;
-    final rainfall = weatherData?['rainfall'] ?? 800.0;
+    final temperature = weatherData?['temperature'] as double?;
+    if (temperature == null) return [];
 
     List<Map<String, dynamic>> crops = [];
 
@@ -242,46 +278,29 @@ class _AdviceScreenState extends State<AdviceScreen>
       crops = [
         {
           'name': 'Wheat',
-          'suitability': _calculateSuitability(
-            ph,
-            temperature,
-            rainfall,
-            'wheat',
-          ),
-          'reason': 'Ideal winter crop for current soil and weather conditions',
+          'suitability': _calculateSuitability(ph, temperature, 'wheat'),
+          'reason':
+              'Winter crop option based on recorded soil pH and temperature',
           'expectedYield': '4-5 tons/hectare',
           'duration': '120-150 days',
-          'profit': '₹25,000-35,000/hectare',
           'icon': FontAwesomeIcons.wheatAwn,
           'color': const Color(0xFFFF9800),
         },
         {
           'name': 'Mustard',
-          'suitability': _calculateSuitability(
-            ph,
-            temperature,
-            rainfall,
-            'mustard',
-          ),
+          'suitability': _calculateSuitability(ph, temperature, 'mustard'),
           'reason': 'Excellent oilseed crop for winter season',
           'expectedYield': '1.5-2 tons/hectare',
           'duration': '90-120 days',
-          'profit': '₹20,000-30,000/hectare',
           'icon': FontAwesomeIcons.sun,
           'color': const Color(0xFFFFC107),
         },
         {
           'name': 'Gram (Chickpea)',
-          'suitability': _calculateSuitability(
-            ph,
-            temperature,
-            rainfall,
-            'gram',
-          ),
+          'suitability': _calculateSuitability(ph, temperature, 'gram'),
           'reason': 'Nitrogen-fixing legume that improves soil health',
           'expectedYield': '1.5-2.5 tons/hectare',
           'duration': '100-120 days',
-          'profit': '₹30,000-45,000/hectare',
           'icon': FontAwesomeIcons.spa,
           'color': const Color(0xFF795548),
         },
@@ -291,31 +310,21 @@ class _AdviceScreenState extends State<AdviceScreen>
       crops = [
         {
           'name': 'Rice (Paddy)',
-          'suitability': _calculateSuitability(
-            ph,
-            temperature,
-            rainfall,
-            'rice',
-          ),
-          'reason': 'Perfect monsoon crop with high water availability',
+          'suitability': _calculateSuitability(ph, temperature, 'rice'),
+          'reason':
+              'Seasonal crop option; check local water availability before planting',
           'expectedYield': '4-6 tons/hectare',
           'duration': '120-150 days',
-          'profit': '₹35,000-50,000/hectare',
           'icon': FontAwesomeIcons.seedling,
           'color': const Color(0xFF4CAF50),
         },
         {
           'name': 'Cotton',
-          'suitability': _calculateSuitability(
-            ph,
-            temperature,
-            rainfall,
-            'cotton',
-          ),
-          'reason': 'Valuable cash crop suitable for warm, wet conditions',
+          'suitability': _calculateSuitability(ph, temperature, 'cotton'),
+          'reason':
+              'Valuable cash crop; check local water availability before planting',
           'expectedYield': '15-20 quintals/hectare',
           'duration': '180-200 days',
-          'profit': '₹60,000-80,000/hectare',
           'icon': FontAwesomeIcons.cloudRain,
           'color': const Color(0xFFFFEB3B),
         },
@@ -325,31 +334,19 @@ class _AdviceScreenState extends State<AdviceScreen>
       crops = [
         {
           'name': 'Watermelon',
-          'suitability': _calculateSuitability(
-            ph,
-            temperature,
-            rainfall,
-            'watermelon',
-          ),
+          'suitability': _calculateSuitability(ph, temperature, 'watermelon'),
           'reason': 'Heat-tolerant crop perfect for summer conditions',
           'expectedYield': '25-35 tons/hectare',
           'duration': '90-110 days',
-          'profit': '₹40,000-60,000/hectare',
           'icon': FontAwesomeIcons.appleWhole,
           'color': const Color(0xFFE91E63),
         },
         {
           'name': 'Cucumber',
-          'suitability': _calculateSuitability(
-            ph,
-            temperature,
-            rainfall,
-            'cucumber',
-          ),
+          'suitability': _calculateSuitability(ph, temperature, 'cucumber'),
           'reason': 'Quick-growing summer vegetable with good returns',
           'expectedYield': '15-20 tons/hectare',
           'duration': '60-80 days',
-          'profit': '₹25,000-35,000/hectare',
           'icon': FontAwesomeIcons.leaf,
           'color': const Color(0xFF4CAF50),
         },
@@ -367,37 +364,17 @@ class _AdviceScreenState extends State<AdviceScreen>
     final month = DateTime.now().month;
     String season = _getCurrentSeason(month);
     final ph = soilData?['ph'] ?? 6.5;
-    final temperature = weatherData?['temperature'] ?? 25.0;
-    final rainfall = weatherData?['rainfall'] ?? 800.0;
+    final temperature = weatherData?['temperature'] as double?;
 
     List<Map<String, dynamic>> cropsToAvoid = [];
 
     if (season == 'rabi') {
-      // Avoid monsoon crops in winter
-      if (rainfall < 600) {
-        cropsToAvoid.add({
-          'name': 'Rice',
-          'reason': 'Insufficient water availability for paddy cultivation',
-          'icon': Icons.water_drop_outlined,
-          'color': Colors.red,
-        });
-      }
-      if (temperature > 30) {
+      if (temperature != null && temperature > 30) {
         cropsToAvoid.add({
           'name': 'Peas',
           'reason': 'Too warm for cool season legumes',
           'icon': Icons.thermostat,
           'color': Colors.orange,
-        });
-      }
-    } else if (season == 'kharif') {
-      // Avoid winter crops in monsoon
-      if (rainfall > 1200) {
-        cropsToAvoid.add({
-          'name': 'Wheat',
-          'reason': 'Excessive moisture can cause fungal diseases',
-          'icon': Icons.water_damage,
-          'color': Colors.red,
         });
       }
     }
@@ -423,71 +400,33 @@ class _AdviceScreenState extends State<AdviceScreen>
     return cropsToAvoid.take(2).toList();
   }
 
-  Map<String, Map<String, String>> _getMarketPrices() {
-    return {
-      'Wheat': {
-        'currentPrice': '₹2,180/quintal',
-        'trend': '↑ +2.5%',
-        'trendColor': 'green',
-      },
-      'Rice': {
-        'currentPrice': '₹2,850/quintal',
-        'trend': '↑ +5.2%',
-        'trendColor': 'green',
-      },
-      'Mustard': {
-        'currentPrice': '₹5,420/quintal',
-        'trend': '↓ -1.8%',
-        'trendColor': 'red',
-      },
-      'Gram': {
-        'currentPrice': '₹5,180/quintal',
-        'trend': '↑ +3.1%',
-        'trendColor': 'green',
-      },
-      'Cotton': {
-        'currentPrice': '₹6,240/quintal',
-        'trend': '→ 0.0%',
-        'trendColor': 'grey',
-      },
-    };
-  }
-
   String _getCurrentSeason(int month) {
     if (month >= 6 && month <= 10) return 'kharif';
     if (month >= 11 || month <= 3) return 'rabi';
     return 'summer';
   }
 
-  double _calculateSuitability(
-    double ph,
-    double temp,
-    double rainfall,
-    String cropType,
-  ) {
+  double _calculateSuitability(double ph, double temp, String cropType) {
     double score = 0.0;
 
     switch (cropType) {
       case 'wheat':
         score += (ph >= 6.0 && ph <= 7.5) ? 40 : 20;
         score += (temp >= 15 && temp <= 25) ? 35 : 20;
-        score += (rainfall >= 400 && rainfall <= 1000) ? 25 : 15;
         break;
       case 'rice':
         score += (ph >= 5.5 && ph <= 7.0) ? 40 : 25;
         score += (temp >= 20 && temp <= 35) ? 35 : 20;
-        score += (rainfall >= 800) ? 25 : 15;
         break;
       case 'cotton':
         score += (ph >= 5.8 && ph <= 8.0) ? 40 : 25;
         score += (temp >= 22 && temp <= 35) ? 35 : 20;
-        score += (rainfall >= 500 && rainfall <= 1200) ? 25 : 15;
         break;
       default:
-        score = 70.0;
+        return 70.0;
     }
 
-    return score.clamp(50.0, 95.0);
+    return (score * 100 / 75).clamp(50.0, 95.0);
   }
 
   @override
@@ -540,9 +479,11 @@ class _AdviceScreenState extends State<AdviceScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (weatherUnavailable)
+                    if (weatherSource != WeatherObservationSource.live)
                       _buildTrustBanner(
-                        'Weather data unavailable. These are general reference estimates, not live weather-based advice.',
+                        weatherSource == WeatherObservationSource.cached
+                            ? 'Using ${weatherIsStale ? 'stale ' : ''}cached weather. Recommendations are based on an earlier observation, not live weather.'
+                            : 'Weather data is unavailable. Recommendations are paused rather than based on assumed measurements.',
                         Icons.info_outline,
                       ),
                     _buildSummaryCard(),
@@ -552,6 +493,8 @@ class _AdviceScreenState extends State<AdviceScreen>
                     _buildCropsToAvoid(),
                     const SizedBox(height: 12),
                     _buildMarketPrices(),
+                    const SizedBox(height: 12),
+                    _buildSafetyAndEscalationCard(),
                   ],
                 ),
               ),
@@ -644,7 +587,10 @@ class _AdviceScreenState extends State<AdviceScreen>
 
   Widget _buildCropRecommendations() {
     if (recommendedCrops.isEmpty) {
-      return _buildNoCropsFound();
+      return _buildNoCropsFound(
+        weatherUnavailable:
+            weatherSource == WeatherObservationSource.unavailable,
+      );
     }
 
     return Column(
@@ -869,27 +815,15 @@ class _AdviceScreenState extends State<AdviceScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _buildInfoItem(
-            'Expected Profit',
-            crop['profit'],
-            Icons.attach_money,
-            isProfit: true,
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoItem(
-    String label,
-    String value,
-    IconData icon, {
-    bool isProfit = false,
-  }) {
+  Widget _buildInfoItem(String label, String value, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: isProfit ? Colors.green : Colors.grey[600]),
+        Icon(icon, size: 16, color: Colors.grey[600]),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -907,7 +841,7 @@ class _AdviceScreenState extends State<AdviceScreen>
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isProfit ? Colors.green : const Color(0xFF2E7D32),
+                  color: const Color(0xFF2E7D32),
                 ),
               ),
             ],
@@ -980,8 +914,6 @@ class _AdviceScreenState extends State<AdviceScreen>
   }
 
   Widget _buildMarketPrices() {
-    final marketPrices = _getMarketPrices();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -994,77 +926,202 @@ class _AdviceScreenState extends State<AdviceScreen>
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+        if (_isLoadingMarket)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+              ),
+            ),
+          )
+        else if (_marketHasError)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Failed to load live market prices.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _loadMarketPrices,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Retry'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF2E7D32),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (_marketPrices.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            ),
+            child: Text(
+              'No market price data available at this time.',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: _marketPrices.map((price) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          price.commodity,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          '₹${price.modalPrice.toStringAsFixed(0)} / quintal',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF2E7D32),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          '${price.market}, ${price.state}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: const Color(0xFF6B7280),
+                          ),
+                          textAlign: TextAlign.end,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSafetyAndEscalationCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.verified_user_outlined,
+                color: Color(0xFF2E7D32),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Safety & Expert Escalation Notice',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
               ),
             ],
           ),
-          child: Column(
-            children: marketPrices.entries.take(4).map((entry) {
-              final crop = entry.key;
-              final data = entry.value;
-              final trendColor = data['trendColor'] == 'green'
-                  ? Colors.green
-                  : data['trendColor'] == 'red'
-                  ? Colors.red
-                  : Colors.grey;
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        crop,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        data['currentPrice']!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        data['trend']!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          color: trendColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+          const SizedBox(height: 8),
+          Text(
+            '• ML suitability & confidence percentages are statistical model estimates based on supplied soil and weather inputs. They are NOT guarantees of crop success, yield, or financial profit.',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: const Color(0xFF4B5563),
+              height: 1.4,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            '• Explanatory notes under "Why this crop?" are AI-generated explanations of the ML model\'s primary prediction.',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: const Color(0xFF4B5563),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '• Before making field decisions—especially for chemical, pesticide, or fertilizer applications—consult a qualified local Krishi Vigyan Kendra (KVK) specialist or Agricultural Extension Officer.',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: const Color(0xFF4B5563),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-Widget _buildNoCropsFound() {
+Widget _buildNoCropsFound({required bool weatherUnavailable}) {
+  final message = weatherUnavailable
+      ? 'Temperature and humidity observations are unavailable. Recommendations are paused rather than estimated.'
+      : 'Current conditions may not be optimal. Consider improving soil health or wait for better weather.';
   return Container(
     width: double.infinity,
     padding: const EdgeInsets.all(20),
@@ -1082,7 +1139,9 @@ Widget _buildNoCropsFound() {
         ),
         const SizedBox(height: 12),
         Text(
-          'No Suitable Crops Found',
+          weatherUnavailable
+              ? 'Recommendations Paused'
+              : 'No Suitable Crops Found',
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -1091,7 +1150,7 @@ Widget _buildNoCropsFound() {
         ),
         const SizedBox(height: 8),
         Text(
-          'Current conditions may not be optimal. Consider improving soil health or wait for better weather.',
+          message,
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(fontSize: 14, color: Colors.orange[600]),
         ),

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import '../advice/advice_screen.dart';
+import '../../models/tomato_disease_information.dart';
 import '../../services/ai_service.dart';
 
 class ScanScreen extends StatefulWidget {
@@ -215,16 +215,17 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
                 const SizedBox(height: 8),
 
-                Text(
-                  'AI-powered crop health analysis for better farming decisions',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: const Color(0xFF6B7280),
-                    fontWeight: FontWeight.w500,
+                if (_analysisResult == null)
+                  Text(
+                    'AI predictions are not confirmed diagnoses.',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
                 // Analysis Status Section
                 Expanded(
@@ -365,7 +366,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 12),
           Text(
-            'Capture or upload crop images to get instant health analysis, disease detection, and expert farming recommendations.',
+            'This experimental model selects only among eight tomato categories. It is not field-validated and cannot identify non-tomato or unrecognized conditions.',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: const Color(0xFF6B7280),
@@ -401,22 +402,12 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 20),
           Text(
-            'Analyzing Crop Health...',
+            'Analyzing image...',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF111827),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Our advanced AI is examining your crop for diseases, nutrient deficiencies, and providing actionable farming insights.',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF6B7280),
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -473,19 +464,55 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildAnalysisResultCard() {
-    final unavailable = _analysisResult?['unavailable'] == true;
+    final diagnosisStatus = _analysisResult?['diagnosis_status'];
+    final disease = _analysisResult?['disease'];
+    final information = disease is String
+        ? TomatoDiseaseInformation.forName(disease)
+        : null;
+    final hasPrediction =
+        diagnosisStatus == 'uncertain' &&
+        _analysisResult?['crop_type'] == 'Tomato' &&
+        disease is String &&
+        disease.trim().isNotEmpty &&
+        information != null &&
+        _analysisResult?['unavailable'] != true &&
+        _analysisResult?['error'] != true;
+    final isHealthy = hasPrediction && information.isHealthy;
+    final healthyExplanation = information?.possibleCause ?? '';
+    final heading = hasPrediction
+        ? 'Tomato — $disease'
+        : switch (diagnosisStatus) {
+            'uncertain' => 'Result uncertain',
+            'unsupported' => 'Image not supported',
+            _ => 'Scan unavailable',
+          };
+    final message = switch (diagnosisStatus) {
+      'uncertain' =>
+        'The image could not be classified reliably. Try a clear photo of one tomato leaf.',
+      'unsupported' =>
+        'This image is not supported for tomato disease scanning.',
+      _ => 'The scan could not be completed. Try a clear photo of one leaf.',
+    };
+    final sections = isHealthy
+        ? <(String, Object?)>[]
+        : <(String, Object?)>[
+            ('Possible cause', _resultSectionValue('possible_cause')),
+            ('What to do', _resultSectionValue('recommended_actions')),
+            ('Prevention', _resultSectionValue('prevention')),
+          ].where((section) => section.$2 != null).toList(growable: false);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -495,118 +522,75 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  color: const Color(0xFF10B981).withOpacity(0.10),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  unavailable ? Icons.info_outline : Icons.check_circle,
-                  color: unavailable ? Colors.orange : Color(0xFF10B981),
-                  size: 24,
+                  hasPrediction ? Icons.eco_outlined : Icons.info_outline,
+                  color: hasPrediction
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFF9A6B16),
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                unavailable ? 'Analysis Unavailable' : 'Analysis Complete',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
+              Expanded(
+                child: Text(
+                  heading,
+                  style: GoogleFonts.inter(
+                    fontSize: hasPrediction ? 22 : 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
+                    height: 1.25,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
           if (_selectedImage != null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.file(
                 _selectedImage!,
-                height: 150,
+                height: 168,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
           ],
 
-          // Crop Type Badge
-          if (_analysisResult?['crop_type'] != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                _analysisResult!['crop_type'],
+          if (hasPrediction) ...[
+            if (isHealthy)
+              Text(
+                healthyExplanation,
                 style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF10B981),
+                  fontSize: 14,
+                  color: const Color(0xFF6B7280),
+                  height: 1.5,
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          Text(
-            unavailable ? 'Safety Notice' : 'Health Assessment',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _analysisResult?['status'] ??
-                'Analysis completed successfully. Your crop appears to be in good health.',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF6B7280),
-              height: 1.5,
-            ),
-          ),
-
-          // Yield Prediction
-          if (_analysisResult?['yield_prediction'] != null) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(
-                  Icons.trending_up,
-                  color: Color(0xFF10B981),
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Expected: ${_analysisResult!['yield_prediction']}',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF10B981),
-                  ),
-                ),
+              )
+            else
+              for (var index = 0; index < sections.length; index++) ...[
+                _buildResultSection(sections[index].$1, sections[index].$2!),
+                if (index < sections.length - 1) const SizedBox(height: 12),
               ],
-            ),
-          ],
-
-          if (_analysisResult?['recommendations'] != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
-              'Farming Recommendations',
+              'Unverified model prediction — not a confirmed diagnosis.',
               style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
+                fontSize: 12,
+                color: const Color(0xFF9CA3AF),
+                fontStyle: FontStyle.italic,
               ),
             ),
-            const SizedBox(height: 8),
+          ] else ...[
             Text(
-              _analysisResult!['recommendations'],
+              message,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: const Color(0xFF6B7280),
@@ -615,41 +599,14 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
             ),
           ],
 
-          if (_analysisResult?['unavailable'] == true) ...[
-            const SizedBox(height: 12),
-            Semantics(
-              container: true,
-              label: 'Expert escalation guidance',
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  border: Border.all(color: Colors.orange.shade200),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'For disease, pesticide, or treatment decisions, take this image to a qualified agricultural extension officer. No confidence score or diagnosis is available here.',
-                ),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const AdviceScreen(showBottomNav: true),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.lightbulb, color: Colors.white),
+              onPressed: _resetAnalysis,
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               label: Text(
-                'Get More Advice',
+                'Scan another image',
                 style: GoogleFonts.inter(
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -657,13 +614,82 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Object? _resultSectionValue(String key) {
+    final value = _analysisResult?[key];
+    if (value is String && value.trim().isNotEmpty) return value.trim();
+    if (value is List && value.every((item) => item is String)) {
+      final items = value.cast<String>().where(
+        (item) => item.trim().isNotEmpty,
+      );
+      final nonEmptyItems = items.toList(growable: false);
+      return nonEmptyItems.isEmpty ? null : nonEmptyItems;
+    }
+    return null;
+  }
+
+  Widget _buildResultSection(String title, Object content) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAF9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8EFEB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF087F5B),
+            ),
+          ),
+          const SizedBox(height: 5),
+          if (content is String)
+            Text(
+              content,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                height: 1.45,
+                color: const Color(0xFF374151),
+              ),
+            )
+          else if (content is List<String>)
+            for (final item in content)
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('•  '),
+                    Expanded(
+                      child: Text(
+                        item,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          height: 1.45,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
         ],
       ),
     );

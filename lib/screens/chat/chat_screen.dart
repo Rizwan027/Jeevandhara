@@ -53,11 +53,22 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _addMessage(String text, {required bool isUser}) {
+  void _addMessage(
+    String text, {
+    required bool isUser,
+    bool isError = false,
+    String? originalUserPrompt,
+  }) {
     if (!mounted) return;
     setState(() {
       messages.add(
-        ChatMessage(text: text, isUser: isUser, timestamp: DateTime.now()),
+        ChatMessage(
+          text: text,
+          isUser: isUser,
+          timestamp: DateTime.now(),
+          isError: isError,
+          originalUserPrompt: originalUserPrompt,
+        ),
       );
     });
     _scrollToBottom();
@@ -77,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _sendMessage(String text) {
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty || _isTyping) return;
 
     _addMessage(text, isUser: true);
     _messageController.clear();
@@ -91,17 +102,34 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Future<void> _getAIResponse(String userMessage) async {
     String response;
+    bool hasError = false;
     try {
       response = await _aiService.getAgriculturalAdvice(userMessage);
     } on AIServiceException catch (error) {
       response = error.message;
+      hasError = true;
     } catch (_) {
       response = 'Unable to generate a reply. Please try again.';
+      hasError = true;
     }
 
     if (!mounted) return;
     setState(() => _isTyping = false);
-    _addMessage(response, isUser: false);
+    _addMessage(
+      response,
+      isUser: false,
+      isError: hasError,
+      originalUserPrompt: hasError ? userMessage : null,
+    );
+  }
+
+  void _retryMessage(ChatMessage message) {
+    if (_isTyping || message.originalUserPrompt == null) return;
+    setState(() {
+      messages.remove(message);
+      _isTyping = true;
+    });
+    _getAIResponse(message.originalUserPrompt!);
   }
 
   String _getFallbackResponse(String userMessage) {
@@ -282,6 +310,32 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ),
 
+          // Unobtrusive Safety Notice Bar
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            color: const Color(0xFFF3F4F6),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  size: 14,
+                  color: Color(0xFF4B5563),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'AI chat provides general guidance. Verify chemical, pesticide & field decisions with a local agricultural extension officer.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: const Color(0xFF4B5563),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // Chat Messages and Quick Actions
           Expanded(
             child: Column(
@@ -336,22 +390,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-                        ),
+                        gradient: message.isError
+                            ? const LinearGradient(
+                                colors: [Color(0xFFEF5350), Color(0xFFE57373)],
+                              )
+                            : const LinearGradient(
+                                colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                              ),
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFF4CAF50,
-                            ).withValues(alpha: 0.3),
+                            color:
+                                (message.isError
+                                        ? const Color(0xFFEF5350)
+                                        : const Color(0xFF4CAF50))
+                                    .withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.psychology,
+                      child: Icon(
+                        message.isError
+                            ? Icons.error_outline
+                            : Icons.psychology,
                         color: Colors.white,
                         size: 16,
                       ),
@@ -367,6 +429,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       decoration: BoxDecoration(
                         color: message.isUser
                             ? const Color(0xFF4CAF50)
+                            : message.isError
+                            ? const Color(0xFFFFF5F5)
                             : Colors.white,
                         borderRadius: BorderRadius.only(
                           topLeft: const Radius.circular(20),
@@ -378,6 +442,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           BoxShadow(
                             color: message.isUser
                                 ? const Color(0xFF4CAF50).withValues(alpha: 0.3)
+                                : message.isError
+                                ? const Color(
+                                    0xFFEF5350,
+                                  ).withValues(alpha: 0.15)
                                 : Colors.black.withValues(alpha: 0.1),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
@@ -385,9 +453,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         ],
                         border: !message.isUser
                             ? Border.all(
-                                color: const Color(
-                                  0xFF4CAF50,
-                                ).withValues(alpha: 0.1),
+                                color: message.isError
+                                    ? const Color(0xFFEF5350)
+                                    : const Color(
+                                        0xFF4CAF50,
+                                      ).withValues(alpha: 0.1),
                                 width: 1,
                               )
                             : null,
@@ -409,47 +479,106 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   styleSheet: MarkdownStyleSheet(
                                     p: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: const Color(0xFF1B5E20),
+                                      color: message.isError
+                                          ? const Color(0xFFC62828)
+                                          : const Color(0xFF1B5E20),
                                       height: 1.5,
                                     ),
                                     strong: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: const Color(0xFF1B5E20),
+                                      color: message.isError
+                                          ? const Color(0xFFB71C1C)
+                                          : const Color(0xFF1B5E20),
                                       fontWeight: FontWeight.bold,
                                       height: 1.5,
                                     ),
                                     em: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: const Color(0xFF1B5E20),
+                                      color: message.isError
+                                          ? const Color(0xFFC62828)
+                                          : const Color(0xFF1B5E20),
                                       fontStyle: FontStyle.italic,
                                       height: 1.5,
                                     ),
                                     h1: GoogleFonts.poppins(
                                       fontSize: 18,
-                                      color: const Color(0xFF1B5E20),
+                                      color: message.isError
+                                          ? const Color(0xFFB71C1C)
+                                          : const Color(0xFF1B5E20),
                                       fontWeight: FontWeight.bold,
                                     ),
                                     h2: GoogleFonts.poppins(
                                       fontSize: 16,
-                                      color: const Color(0xFF1B5E20),
+                                      color: message.isError
+                                          ? const Color(0xFFB71C1C)
+                                          : const Color(0xFF1B5E20),
                                       fontWeight: FontWeight.bold,
                                     ),
                                     h3: GoogleFonts.poppins(
                                       fontSize: 15,
-                                      color: const Color(0xFF1B5E20),
+                                      color: message.isError
+                                          ? const Color(0xFFB71C1C)
+                                          : const Color(0xFF1B5E20),
                                       fontWeight: FontWeight.w600,
                                     ),
                                     listBullet: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: const Color(0xFF4CAF50),
+                                      color: message.isError
+                                          ? const Color(0xFFE57373)
+                                          : const Color(0xFF4CAF50),
                                     ),
                                     code: GoogleFonts.robotoMono(
                                       fontSize: 13,
-                                      color: const Color(0xFF2E7D32),
-                                      backgroundColor: const Color(0xFFF1F8E9),
+                                      color: message.isError
+                                          ? const Color(0xFFB71C1C)
+                                          : const Color(0xFF2E7D32),
+                                      backgroundColor: message.isError
+                                          ? const Color(0xFFFFEBEE)
+                                          : const Color(0xFFF1F8E9),
                                     ),
                                   ),
                                 ),
+                          if (message.isError &&
+                              message.originalUserPrompt != null) ...[
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: _isTyping
+                                  ? null
+                                  : () => _retryMessage(message),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFFEF5350),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.refresh,
+                                      size: 14,
+                                      color: Color(0xFFC62828),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Retry',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFFC62828),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 6),
                           Text(
                             _formatTime(message.timestamp),
@@ -457,6 +586,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               fontSize: 11,
                               color: message.isUser
                                   ? Colors.white.withValues(alpha: 0.7)
+                                  : message.isError
+                                  ? const Color(0xFFE57373)
                                   : Colors.grey[500],
                             ),
                           ),
@@ -1123,10 +1254,14 @@ class ChatMessage {
   final String text;
   final bool isUser;
   final DateTime timestamp;
+  final bool isError;
+  final String? originalUserPrompt;
 
   ChatMessage({
     required this.text,
     required this.isUser,
     required this.timestamp,
+    this.isError = false,
+    this.originalUserPrompt,
   });
 }

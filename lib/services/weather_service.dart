@@ -175,6 +175,16 @@ class WeatherService {
     }
   }
 
+  Future<WeatherObservation> getWeatherObservation() async {
+    final current = await getCurrentWeather();
+    if (current != null) return WeatherObservation.live(current);
+
+    final cached = await getCachedWeather();
+    if (cached != null) return WeatherObservation.cached(cached);
+
+    return const WeatherObservation.unavailable();
+  }
+
   // Get weather forecast (5 days)
   Future<List<WeatherForecast>> getWeatherForecast() async {
     if (_apiKey.isEmpty) return const <WeatherForecast>[];
@@ -511,6 +521,38 @@ class CachedWeather {
   });
 
   bool get isStale => DateTime.now().difference(savedAt).inHours >= 1;
+}
+
+enum WeatherObservationSource { live, cached, unavailable }
+
+class WeatherObservation {
+  final WeatherObservationSource source;
+  final WeatherData? weather;
+  final bool isStale;
+
+  const WeatherObservation.live(WeatherData weather)
+    : source = WeatherObservationSource.live,
+      weather = weather,
+      isStale = false;
+
+  WeatherObservation.cached(CachedWeather cached)
+    : source = WeatherObservationSource.cached,
+      weather = cached.weather,
+      isStale = cached.isStale;
+
+  const WeatherObservation.unavailable()
+    : source = WeatherObservationSource.unavailable,
+      weather = null,
+      isStale = false;
+
+  Map<String, double>? get recommendationInputs {
+    final observation = weather;
+    if (observation == null) return null;
+    return {
+      'temperature': observation.temperature,
+      'humidity': observation.humidity.toDouble(),
+    };
+  }
 }
 
 class WeatherAlert {

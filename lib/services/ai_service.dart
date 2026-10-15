@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
+import 'tomato_ml_service.dart';
 
 class AIServiceException implements Exception {
   final String message;
@@ -13,6 +14,7 @@ class AIService {
   static const _maxMessageLength = 4000;
   static const _modelName = 'gemini-3.6-flash';
   final GenerativeModel? _model;
+  final TomatoMlService _tomatoMlService = TomatoMlService.instance;
 
   AIService() : _model = _createModel();
 
@@ -46,9 +48,13 @@ class AIService {
       final prompt =
           '''
 You are an expert agricultural advisor AI assistant helping farmers in India.
-Provide brief, practical farming advice in under 150 words.
-Use bullet points, include specific costs in INR when relevant, and prioritize
-immediate actionable steps.
+Provide brief, practical, conservative farming advice in under 150 words.
+Use bullet points and prioritize immediate actionable steps.
+
+STRICT SAFETY & DATA BOUNDARIES:
+- Do not invent specific market prices, costs in INR, subsidies, financial guarantees, or yield promises.
+- Do not provide unverified specific chemical or pesticide product recommendations or exact dosage/chemical mixing prescriptions.
+- If the question involves plant diseases, chemical treatments, or pesticide dosages, advise the farmer to verify exact product selection and dosage with a qualified local agricultural extension officer or Krishi Vigyan Kendra (KVK).
 
 Farmer's Question: $message
 ''';
@@ -165,14 +171,7 @@ What would you like to know?""";
   }
 
   Future<Map<String, dynamic>> analyzePlantHealth(String imagePath) async {
-    return {
-      'status': 'Crop diagnosis is unavailable in this version.',
-      'confidence': 0.0,
-      'recommendations':
-          'This image has not been analyzed. Do not use this screen to make treatment or pesticide decisions. Consult a qualified agricultural expert for diagnosis.',
-      'error': true,
-      'unavailable': true,
-    };
+    return _tomatoMlService.analyzePlantHealth(imagePath);
   }
 
   // Get crop recommendations based on soil data and weather
