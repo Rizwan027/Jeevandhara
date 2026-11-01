@@ -33,6 +33,14 @@ Items marked **Needs Verification** require Firebase Console access, real-device
 - Physical Android testing confirmed the ML prediction flow works.
 - Physical Android testing confirmed the hybrid ML plus Gemini explanation flow works.
 
+## Recently Completed UI and Localization Work
+
+- **Plant disease scan:** The scan UI was redesigned and manually tested, as reported for this update. Camera/gallery selection and the 38-class TFLite model, preprocessing, and prediction flow remain in place. Model predictions are still presented as unverified, not confirmed diagnoses.
+- **Crop recommendations:** The recommendation screen now highlights a featured crop, ranks recommendations, and presents suitability signals and the soil/weather conditions used. The soil input screen has clearer labels, hints, and validation presentation. The existing crop model, prediction service, and recommendation logic remain in use.
+- **Multilingual support:** English, Hindi, and Marathi are the available app languages. Language selection is available before login and in Settings, and the selection is saved and restored. Login/registration, profile, Home, Input Data, and Chat have localized UI; localization of all remaining screens and errors is not complete.
+- **Home:** The header, quick actions, soil/weather sections, and live market-price section were redesigned while retaining existing data, navigation, and callbacks.
+- **Chat:** The header, composer, message bubbles, Markdown, welcome card, quick actions, suggestions, and typing animation were improved. Chat UI text is localized in English, Hindi, and Marathi, with accessibility labels and responsive text handling. Existing service calls, submission, retry, and attachment callbacks remain; the generic safety-notice UI was removed as requested.
+
 ## Current Security Limitation
 
 Gemini, OpenWeather, and Data.gov.in keys are currently handled through `.env` for development. This is not equivalent to secure production secret storage in a released Flutter APK because bundled client configuration can be extracted. Backend/proxy work remains required for production. T01 and T02 therefore remain incomplete.
@@ -59,7 +67,7 @@ Jeevandhara is a Flutter farming-advisor prototype intended to help farmers with
 
 ## Target users
 
-The apparent target users are farmers and agriculture users who need localized, mobile-first guidance. The app offers English, Hindi, Marathi, Telugu, Tamil, and Bengali language choices.
+The apparent target users are farmers and agriculture users who need localized, mobile-first guidance. The app offers English, Hindi, and Marathi language choices.
 
 ## Current user flows
 
@@ -186,50 +194,50 @@ The app is a visually developed prototype, not a production-ready agricultural p
 
 ## Authentication
 
-- **Current problem:** Auth is visually simple but not localized; email validation only checks for `@`; there is no password reset, email verification, account deletion, or clear startup/configuration failure state.
-- **Recommended improvement:** Add accessible field errors, password reset, verification status, show/hide password semantics, localized strings, progress/error states, and clear recovery actions.
+- **Current problem:** Login and registration are localized and include password reset, email verification, and account deletion flows. Input validation, complete localization coverage, and broader accessibility validation remain.
+- **Recommended improvement:** Continue validation and accessibility work, and localize remaining authentication errors and states.
 - **Expected benefit:** Better account completion and fewer support failures.
 - **Priority:** P1.
 
 ## Language selection and onboarding
 
-- **Current problem:** Onboarding completion and selected language are not persisted. `selectedLanguage` is passed but not meaningfully used. Every authenticated session can return users to onboarding.
-- **Recommended improvement:** Persist language and onboarding completion per device/user; provide a settings entry to revisit language/onboarding.
+- **Current problem:** English, Hindi, and Marathi are selectable before login and in Settings; the selected language is saved and restored. Login/registration, profile, Home, Input Data, and Chat are localized, but other screens and errors still need coverage.
+- **Recommended improvement:** Continue localization across remaining screens and errors, and verify translated layouts and accessibility throughout the app.
 - **Expected benefit:** Faster repeat launches and consistent localization.
 - **Priority:** P1.
 
 ## Home dashboard
 
-- **Current problem:** The screen is approximately 2,032 lines and mixes dashboard, navigation, weather, market, alerts, and business logic. Several small text sizes, fixed rows, and color-coded cards may fail on narrow screens or large text.
-- **Recommended improvement:** Split sections, use responsive layouts, expose loading/error/stale states, add refresh, label sample data, and use semantic controls.
+- **Current problem:** The header, quick actions, soil/weather sections, and live market-price section have been redesigned. The screen still mixes dashboard and business logic, and full narrow-screen, large-text, tablet, and accessibility coverage is incomplete.
+- **Recommended improvement:** Continue screen decomposition and verify responsive, large-text, and accessible behavior across device sizes.
 - **Expected benefit:** Easier maintenance and clearer trust in dashboard data.
 - **Priority:** P1/P2.
 
 ## Scan Crop
 
-- **Current problem:** Image analysis is mock/fabricated. Permission errors are generic. The screen can show a back button while embedded in the main shell, which can pop the shell unexpectedly.
-- **Recommended improvement:** Make diagnosis trustworthy or label it as demo, distinguish denied/permanently denied permissions, use a shell-safe back behavior, and show image-processing/loading/error/empty states.
+- **Current problem:** The redesigned scan screen uses the 38-class TFLite model and retains camera/gallery image selection and prediction preprocessing. Results are explicitly unverified; model performance and real-device behavior still require validation.
+- **Recommended improvement:** Validate model predictions on representative field images and maintain clear limitations and expert-review guidance.
 - **Expected benefit:** Safer decisions and predictable navigation.
 - **Priority:** P0/P1.
 
 ## Chat
 
-- **Current problem:** Fallback responses can hide AI failures. Attachment, camera/gallery, location, and voice actions are incomplete. Icon-only and gesture controls lack semantics. The entire message UI can rebuild on text changes.
-- **Recommended improvement:** Show service availability and retry states, complete or remove unsupported actions, add semantic labels, and isolate the composer from the message list.
+- **Current problem:** The header, composer, message rendering, Markdown, welcome content, suggestions, and typing indicator have been redesigned and localized in English, Hindi, and Marathi. Accessibility and narrow-screen text handling have been improved; unsupported attachment-sheet actions and broader rebuild/performance work remain.
+- **Recommended improvement:** Continue accessibility and translated-layout validation, and decide how to handle unsupported attachment actions without changing existing behavior prematurely.
 - **Expected benefit:** Better trust, accessibility, and responsiveness.
 - **Priority:** P1/P2.
 
 ## Advice and crop recommendations
 
-- **Current problem:** Advice silently falls back, asks for missing weather description data, uses static extraction values, and can navigate to an unregistered route. The crop recommendation screen appears unreachable.
-- **Recommended improvement:** Add explicit source/confidence/safety states, structured recommendation data, correct weather mapping, register or remove the unreachable flow, and provide a real input-data path.
+- **Current problem:** The redesigned recommendation screen features a top crop, ranked recommendations, suitability signals, and the soil/weather conditions used. The soil input UI has clearer labels, hints, and validation presentation. Model/service behavior is retained; recommendation confidence is not a guarantee of success.
+- **Recommended improvement:** Continue validating recommendation limitations and accessibility, without treating model scores as guaranteed outcomes.
 - **Expected benefit:** Actionable and understandable recommendations.
 - **Priority:** P0/P1.
 
 ## Soil input
 
-- **Current problem:** Existing saved data is not loaded; defaults can overwrite user expectations. The three-column parameter layout may overflow. Units and validation are unclear, and saving includes an artificial delay.
-- **Recommended improvement:** Load saved values, define units, validate in the service layer, make narrow layouts responsive, remove delay, and show save/error confirmation.
+- **Current problem:** The input screen presents clearer labels, hints, and validation feedback, and soil values are user-scoped and persisted. Narrow-screen and translated large-text behavior still need broader validation.
+- **Recommended improvement:** Continue responsive and translated-layout validation while preserving the existing validation and persistence behavior.
 - **Expected benefit:** Accurate user data and fewer accidental overwrites.
 - **Priority:** P1.
 
@@ -497,7 +505,7 @@ Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. Statuses belo
 | T03 | Deploy and test owner-only Firestore rules | Security/Firebase | P0 | Medium | Firebase Console | [BLOCKED - MANUAL ACTION] Configure and deploy rules allowing each authenticated user access only to `users/{uid}`. |
 | T04 | Add Firebase initialization failure and retry UI | Reliability | P0 | Easy | T05 | [COMPLETED] Added startup error boundary with retry UI. |
 | T05 | Generate/configure Firebase options for supported platforms | Platform/Firebase | P0 | Medium | Platform decision | [BLOCKED - MANUAL ACTION] Generate and register Firebase configuration for each supported platform. |
-| T06 | Replace or clearly disable fabricated crop diagnosis | Safety/AI | P0 | Hard | T02 | [PARTIALLY COMPLETED] Mock diagnosis is disabled and labeled unavailable; validated real image inference remains. |
+| T06 | Replace or clearly disable fabricated crop diagnosis | Safety/AI | P0 | Hard | T02 | [PARTIALLY COMPLETED] Integrated 38-class TFLite inference with explicit raw-RGB preprocessing and camera/gallery image selection; results are labeled unverified. Representative field-image validation and expert-review workflow remain. |
 | T07 | Fix/register the `/input_data` route | Navigation | P0 | Easy | T08 | [COMPLETED] Registered the `/input_data` route. |
 | T08 | Consolidate to one authenticated navigation shell | Architecture | P0 | Hard | Product flow decision | [COMPLETED] MainNavigation is the authenticated navigation shell. Duplicate feature-level bottom navigation builders were removed, and the existing PageView/tab architecture is preserved. |
 | T09 | Configure protected release signing | Android/Release | P0 | Medium | Signing credentials | [PARTIALLY COMPLETED] Debug signing was removed and `key.properties` support added; keystore and CI secrets remain to be configured. |
@@ -507,20 +515,20 @@ Priority mapping: P0 = critical, P1 = high, P2 = medium, P3 = low. Statuses belo
 | T13 | Add account deletion and auth lifecycle recovery | Authentication | P1 | Medium | T03/T12 | [COMPLETED] Added reauthentication-protected profile deletion and recent-login error handling. |
 | T14 | Make signup profile provisioning retryable/consistent | Authentication | P1 | Medium | T03 | [COMPLETED] Auth creation is retained while profile and verification setup failures are reported as retryable follow-up work. |
 | T15 | Persist onboarding completion and selected language | UX/State | P1 | Easy | Auth flow | [COMPLETED] Added per-user persistence plus Settings controls to change language and revisit onboarding. |
-| T16 | Complete localization for all screens and errors | UX/Localization | P1 | Medium | T08 | [PARTIALLY COMPLETED] Added translated shared navigation, account/settings, and permission keys with locale tests; feature labels and errors remain hardcoded in many screens. |
+| T16 | Complete localization for all screens and errors | UX/Localization | P1 | Medium | T08 | [PARTIALLY COMPLETED] English, Hindi, and Marathi are selectable and persisted. Login/registration, profile, Home, Input Data, and Chat have localized UI; remaining screens and errors still need coverage. |
 | T17 | Load, validate, and safely persist soil data | Data/UX | P1 | Medium | Data policy | [COMPLETED] Soil N/P/K/pH input is validated and persisted; soil data is scoped to the authenticated user. The soil input UI no longer asks for soil moisture, and weather supplies temperature/humidity separately. |
 | T18 | Scope soil data per authenticated user or document local-only behavior | Data/Security | P1 | Medium | T03/T17 | [COMPLETED] Soil persistence uses a user-scoped storage key, and cleanup behavior was tested. |
 | T19 | Add weather timeout, validation, retry, cache, and stale state | Weather | P1 | Medium | T02 | [COMPLETED] WeatherService was restored from stubs. OpenWeather integration works with timeout/status handling, coordinate validation, cached location fallback, diagnostics, and dotenv-based local development configuration. |
 | T20 | Reuse one location lookup and aggregate daily forecasts | Weather/Performance | P1 | Medium | T19 | [COMPLETED] Weather/location flow was improved and daily forecast aggregation was implemented. |
 | T21 | Label/remove static market data and implement trusted source | Product/Data | P1 | Medium | Data source | [COMPLETED] Static sample market data was removed from Home. The market section now uses official Data.gov.in/AGMARKNET-backed mandi data with dotenv API-key configuration, typed commodity/modal-price/market/state/arrival-date/source parsing, verified server-side filtering, Maharashtra defaults, and capped results. Unsupported date/sort parameters were deliberately not used. T21-B extends this with MainNavigation-owned in-memory ML-to-market integration: Advice publishes successful top-3 crop names, Home requests those commodities, duplicate requests are prevented, and valid existing market data is preserved on refresh failure. |
 | T22 | Add explicit loading/error/empty/retry states across features | UX/Reliability | P1 | Medium | T08 | [COMPLETED] Added comprehensive loading/error/empty/retry states: Home (weather & market retry/cache/error states), Advice (ML/weather loading/error/retry & trust banner), Scan (analyzing/result/unavailable error card & reset), Chat (distinct error bubble & inline prompt retry), Profile (StreamBuilder error card with stream retry & edit name loading indicator), and InputData (initial load failure retry & saving state). |
-| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | [PARTIALLY COMPLETED] ML confidence is displayed with crop recommendations, and Gemini explains the selected ML crop. Prompt safeguards address fabricated prices/costs/subsidies and unsafe specific treatment/dosage claims in AIService. AdviceScreen includes a Safety & Expert Escalation card, and ChatScreen provides a safety notice bar. Physical device validation remains. |
+| T23 | Add AI confidence, source, safety disclaimer, and expert escalation | Safety/AI | P1 | Medium | T06 | [PARTIALLY COMPLETED] ML confidence is displayed with crop recommendations, and Gemini explains the selected ML crop. Prompt safeguards address fabricated prices/costs/subsidies and unsafe specific treatment/dosage claims in AIService. AdviceScreen includes a Safety & Expert Escalation card; the generic Chat safety-notice UI was removed as requested. Physical device validation remains. |
 | T24 | Complete or remove share, notifications, settings, and attachment actions | Product/UX | P1 | Medium | Product decision | [PARTIALLY COMPLETED] Settings is implemented; share, notifications, and chat attachments remain incomplete. |
 | T25 | Fix async lifecycle guards and request cancellation everywhere | Reliability | P1 | Medium | T22 | [PARTIALLY COMPLETED] Added mounted/request-generation guards for weather plus bounded location/geocoding/HTTP operations, scan, Advice, delayed chat scroll, and explicit auth loading/error exits; remaining async flows still need coverage. |
 | T26 | Add camera/photo/location permission explanations | Android/UX | P1 | Easy | Platform testing | [PARTIALLY COMPLETED] Camera denied/permanently-denied explanations and actionable settings are present; location-specific UX remains. |
-| T27 | Add responsive layouts for narrow, large-text, tablet, and landscape states | UI/Responsive | P1 | Medium | T08 | [PARTIALLY COMPLETED] Several narrow-screen/320px and large-text overflow issues were fixed; soil input and Home layout responsiveness were improved. Full tablet/landscape/large-text coverage is not complete. |
+| T27 | Add responsive layouts for narrow, large-text, tablet, and landscape states | UI/Responsive | P1 | Medium | T08 | [PARTIALLY COMPLETED] Narrow-screen and text-wrapping improvements were made across Chat, Home, scan, and soil/recommendation UI. Full tablet, landscape, and large-text coverage is not complete. |
 | T28 | Complete profile loading/error/empty and safe avatar initial handling | Profile | P1 | Easy | T03 | [COMPLETED] Added profile loading/error states, safe initials, verification status, and account actions. |
-| T29 | Add semantics, tooltips, contrast, and accessible controls | Accessibility | P1 | Medium | T08 | [PARTIALLY COMPLETED] Semantic labels and tooltips were added to several controls, with accessibility improvements in tested areas. A full accessibility audit and coverage are not complete. |
+| T29 | Add semantics, tooltips, contrast, and accessible controls | Accessibility | P1 | Medium | T08 | [PARTIALLY COMPLETED] Chat icon controls and retry affordances gained localized labels/tooltips, with responsive text handling; semantics and accessibility improvements also exist in other controls. A full accessibility audit and coverage are not complete. |
 | T30 | Split Home and feature screens into focused widgets/controllers | Architecture | P2 | Hard | T08 | [PARTIALLY COMPLETED] HomeMarketSection was extracted; additional Home decomposition remains. |
 | T31 | Extract typed models and repositories/services | Architecture | P2 | Hard | T30 | [PARTIALLY COMPLETED] Typed weather/soil service models exist; repository and controller separation remains. |
 | T32 | Remove duplicate navigation and dead widgets/methods | Cleanup | P2 | Medium | T08/T30 | [PARTIALLY COMPLETED] Main shell usage is established and all four confirmed feature-level duplicate navigation builders were removed; other dead widgets/methods remain. |
@@ -652,4 +660,3 @@ Scores reflect the audited source and are not a substitute for real-device/produ
 - Repeated onboarding and lost language preference.
 - Silent failures without retry or explanation.
 - Poor usability at narrow widths, large font sizes, and with assistive technology.
-

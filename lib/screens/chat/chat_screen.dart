@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../localization/app_localizations.dart';
 import '../../services/ai_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -102,18 +103,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Future<void> _getAIResponse(String userMessage) async {
     String response;
+    String? localizedErrorKey;
     bool hasError = false;
     try {
       response = await _aiService.getAgriculturalAdvice(userMessage);
     } on AIServiceException catch (error) {
       response = error.message;
+      localizedErrorKey = _getChatErrorKey(error.message);
       hasError = true;
     } catch (_) {
-      response = 'Unable to generate a reply. Please try again.';
+      response = '';
+      localizedErrorKey = 'chat_error_generic';
       hasError = true;
     }
 
     if (!mounted) return;
+    if (localizedErrorKey != null) {
+      response = AppLocalizations.of(context)!.getText(localizedErrorKey);
+    }
     setState(() => _isTyping = false);
     _addMessage(
       response,
@@ -122,6 +129,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       originalUserPrompt: hasError ? userMessage : null,
     );
   }
+
+  String? _getChatErrorKey(String message) => switch (message) {
+    'Please enter a message of 1-4,000 characters.' =>
+      'chat_error_invalid_input',
+    'AI service is unavailable. Add GEMINI_API_KEY to your .env file.' =>
+      'chat_error_unavailable',
+    'The AI service returned an empty response.' => 'chat_error_empty_response',
+    'The AI service took too long to respond. Please try again.' =>
+      'chat_error_timeout',
+    'The AI model is currently unavailable. Please try again later.' =>
+      'chat_error_model_unavailable',
+    'The AI service is not authorized. Please check its configuration.' =>
+      'chat_error_unauthorized',
+    'The AI service is busy. Please try again shortly.' => 'chat_error_busy',
+    'Unable to generate a reply. Please try again.' => 'chat_error_generic',
+    _ => null,
+  };
 
   void _retryMessage(ChatMessage message) {
     if (_isTyping || message.originalUserPrompt == null) return;
@@ -235,71 +259,123 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFF8FFFE),
       body: Column(
         children: [
-          // Modern App Bar
+          // Chat header
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF4CAF50).withOpacity(0.1),
-                  const Color(0xFF81C784).withOpacity(0.05),
-                ],
+                colors: [const Color(0xFFE8F5E9), const Color(0xFFF4FAF3)],
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                ),
               ),
             ),
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 child: Row(
                   children: [
                     if (widget.showBottomNav)
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Color(0xFF2E7D32),
+                        tooltip: localizations.getText('back'),
+                        style: IconButton.styleFrom(
+                          foregroundColor: const Color(0xFF2E7D32),
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                          minimumSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          padding: EdgeInsets.zero,
                         ),
-                      ),
-                    if (!widget.showBottomNav) const SizedBox(width: 12),
-                    const SizedBox(width: 6),
+                        icon: const Icon(Icons.arrow_back_rounded),
+                      )
+                    else
+                      const SizedBox(width: 44),
+                    const SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFF2E7D32),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF2E7D32,
+                            ).withValues(alpha: 0.16),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: const Icon(
-                        Icons.smart_toy,
-                        color: Color(0xFF4CAF50),
-                        size: 20,
+                        Icons.agriculture_rounded,
+                        color: Colors.white,
+                        size: 23,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'AI Farm Assistant',
+                            localizations.getText('chat_title'),
+                            softWrap: true,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF1B5E20),
+                              height: 1.25,
                             ),
                           ),
-                          Text(
-                            _aiService.isAvailable
-                                ? 'Online • Ready to help'
-                                : 'Offline • AI unavailable',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  color: _aiService.isAvailable
+                                      ? const Color(0xFF388E3C)
+                                      : const Color(0xFF9E9E9E),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _aiService.isAvailable
+                                      ? localizations.getText(
+                                          'chat_status_online',
+                                        )
+                                      : localizations.getText(
+                                          'chat_status_offline',
+                                        ),
+                                  softWrap: true,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: _aiService.isAvailable
+                                        ? const Color(0xFF388E3C)
+                                        : Colors.grey[700],
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -307,32 +383,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ],
                 ),
               ),
-            ),
-          ),
-
-          // Unobtrusive Safety Notice Bar
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            color: const Color(0xFFF3F4F6),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  size: 14,
-                  color: Color(0xFF4B5563),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'AI chat provides general guidance. Verify chemical, pesticide & field decisions with a local agricultural extension officer.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: const Color(0xFF4B5563),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
 
@@ -353,7 +403,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       if (index == messages.length && _isTyping) {
                         return _buildTypingIndicator();
                       }
-                      return _buildMessageBubble(messages[index]);
+                      return _buildMessageBubble(
+                        messages[index],
+                        isWelcome: index == 0,
+                      );
                     },
                   ),
                 ),
@@ -368,7 +421,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message) {
+  Widget _buildMessageBubble(ChatMessage message, {bool isWelcome = false}) {
+    final localizations = AppLocalizations.of(context)!;
+
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 300),
       tween: Tween(begin: 0.0, end: 1.0),
@@ -378,7 +433,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           child: Opacity(
             opacity: value,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              padding: EdgeInsets.symmetric(
+                vertical: isWelcome ? 8 : 6,
+                horizontal: 4,
+              ),
               child: Row(
                 mainAxisAlignment: message.isUser
                     ? MainAxisAlignment.end
@@ -387,25 +445,26 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 children: [
                   if (!message.isUser) ...[
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
                         gradient: message.isError
                             ? const LinearGradient(
-                                colors: [Color(0xFFEF5350), Color(0xFFE57373)],
+                                colors: [Color(0xFFE57373), Color(0xFFEF5350)],
                               )
                             : const LinearGradient(
-                                colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                                colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
                               ),
-                        borderRadius: BorderRadius.circular(18),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color:
                                 (message.isError
                                         ? const Color(0xFFEF5350)
-                                        : const Color(0xFF4CAF50))
-                                    .withValues(alpha: 0.3),
-                            blurRadius: 8,
+                                        : const Color(0xFF2E7D32))
+                                    .withValues(alpha: 0.2),
+                            blurRadius: 7,
                             offset: const Offset(0, 2),
                           ),
                         ],
@@ -413,51 +472,71 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       child: Icon(
                         message.isError
                             ? Icons.error_outline
-                            : Icons.psychology,
+                            : Icons.agriculture_rounded,
                         color: Colors.white,
-                        size: 16,
+                        size: 18,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 9),
                   ],
                   Flexible(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.sizeOf(context).width * 0.82,
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isWelcome ? 18 : 16,
+                        vertical: isWelcome ? 16 : 13,
                       ),
                       decoration: BoxDecoration(
-                        color: message.isUser
-                            ? const Color(0xFF4CAF50)
+                        gradient: message.isUser
+                            ? const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
+                              )
+                            : isWelcome
+                            ? const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Colors.white, Color(0xFFF4F9F1)],
+                              )
+                            : null,
+                        color: message.isUser || isWelcome
+                            ? null
                             : message.isError
-                            ? const Color(0xFFFFF5F5)
+                            ? const Color(0xFFFFF5F4)
                             : Colors.white,
                         borderRadius: BorderRadius.only(
                           topLeft: const Radius.circular(20),
                           topRight: const Radius.circular(20),
-                          bottomLeft: Radius.circular(message.isUser ? 20 : 6),
-                          bottomRight: Radius.circular(message.isUser ? 6 : 20),
+                          bottomLeft: Radius.circular(message.isUser ? 20 : 7),
+                          bottomRight: Radius.circular(message.isUser ? 7 : 20),
                         ),
                         boxShadow: [
                           BoxShadow(
                             color: message.isUser
-                                ? const Color(0xFF4CAF50).withValues(alpha: 0.3)
+                                ? const Color(
+                                    0xFF2E7D32,
+                                  ).withValues(alpha: 0.18)
                                 : message.isError
                                 ? const Color(
-                                    0xFFEF5350,
-                                  ).withValues(alpha: 0.15)
-                                : Colors.black.withValues(alpha: 0.1),
+                                    0xFFC62828,
+                                  ).withValues(alpha: 0.08)
+                                : const Color(
+                                    0xFF183B1D,
+                                  ).withValues(alpha: 0.06),
                             blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            offset: const Offset(0, 3),
                           ),
                         ],
                         border: !message.isUser
                             ? Border.all(
                                 color: message.isError
-                                    ? const Color(0xFFEF5350)
-                                    : const Color(
-                                        0xFF4CAF50,
-                                      ).withValues(alpha: 0.1),
+                                    ? const Color(0xFFE57373)
+                                    : isWelcome
+                                    ? const Color(0xFFCEE2CB)
+                                    : const Color(0xFFE2EEE2),
                                 width: 1,
                               )
                             : null,
@@ -465,6 +544,35 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (isWelcome) ...[
+                            Row(
+                              children: [
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE8F5E9),
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                  child: const Icon(
+                                    Icons.eco_rounded,
+                                    size: 17,
+                                    color: Color(0xFF388E3C),
+                                  ),
+                                ),
+                                const SizedBox(width: 9),
+                                Expanded(
+                                  child: Container(
+                                    height: 1,
+                                    color: const Color(
+                                      0xFF2E7D32,
+                                    ).withValues(alpha: 0.12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           message.isUser
                               ? Text(
                                   message.text,
@@ -475,7 +583,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                   ),
                                 )
                               : MarkdownBody(
-                                  data: message.text,
+                                  data: isWelcome
+                                      ? localizations.getText('chat_welcome')
+                                      : message.text,
                                   styleSheet: MarkdownStyleSheet(
                                     p: GoogleFonts.poppins(
                                       fontSize: 14,
@@ -484,111 +594,204 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                                           : const Color(0xFF1B5E20),
                                       height: 1.5,
                                     ),
+                                    pPadding: EdgeInsets.only(
+                                      bottom: isWelcome ? 12 : 10,
+                                    ),
                                     strong: GoogleFonts.poppins(
                                       fontSize: 14,
                                       color: message.isError
-                                          ? const Color(0xFFB71C1C)
+                                          ? const Color(0xFF8E2424)
                                           : const Color(0xFF1B5E20),
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w700,
                                       height: 1.5,
                                     ),
                                     em: GoogleFonts.poppins(
                                       fontSize: 14,
                                       color: message.isError
-                                          ? const Color(0xFFC62828)
-                                          : const Color(0xFF1B5E20),
+                                          ? const Color(0xFF9F2D2A)
+                                          : const Color(0xFF2E5B35),
                                       fontStyle: FontStyle.italic,
                                       height: 1.5,
                                     ),
                                     h1: GoogleFonts.poppins(
-                                      fontSize: 18,
+                                      fontSize: 20,
                                       color: message.isError
-                                          ? const Color(0xFFB71C1C)
+                                          ? const Color(0xFF8E2424)
                                           : const Color(0xFF1B5E20),
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.3,
+                                    ),
+                                    h1Padding: const EdgeInsets.only(
+                                      top: 8,
+                                      bottom: 8,
                                     ),
                                     h2: GoogleFonts.poppins(
-                                      fontSize: 16,
+                                      fontSize: 18,
                                       color: message.isError
-                                          ? const Color(0xFFB71C1C)
+                                          ? const Color(0xFF8E2424)
                                           : const Color(0xFF1B5E20),
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.35,
+                                    ),
+                                    h2Padding: const EdgeInsets.only(
+                                      top: 7,
+                                      bottom: 6,
                                     ),
                                     h3: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      color: message.isError
+                                          ? const Color(0xFF8E2424)
+                                          : const Color(0xFF245A2A),
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.4,
+                                    ),
+                                    h3Padding: const EdgeInsets.only(
+                                      top: 6,
+                                      bottom: 5,
+                                    ),
+                                    h4: GoogleFonts.poppins(
                                       fontSize: 15,
                                       color: message.isError
-                                          ? const Color(0xFFB71C1C)
-                                          : const Color(0xFF1B5E20),
+                                          ? const Color(0xFF8E2424)
+                                          : const Color(0xFF245A2A),
                                       fontWeight: FontWeight.w600,
+                                    ),
+                                    h5: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: message.isError
+                                          ? const Color(0xFF8E2424)
+                                          : const Color(0xFF245A2A),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    h6: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: message.isError
+                                          ? const Color(0xFF8E2424)
+                                          : const Color(0xFF245A2A),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    listIndent: 20,
+                                    listBulletPadding: const EdgeInsets.only(
+                                      right: 8,
                                     ),
                                     listBullet: GoogleFonts.poppins(
                                       fontSize: 14,
                                       color: message.isError
-                                          ? const Color(0xFFE57373)
-                                          : const Color(0xFF4CAF50),
+                                          ? const Color(0xFFC62828)
+                                          : const Color(0xFF388E3C),
                                     ),
                                     code: GoogleFonts.robotoMono(
-                                      fontSize: 13,
+                                      fontSize: 12.5,
                                       color: message.isError
-                                          ? const Color(0xFFB71C1C)
-                                          : const Color(0xFF2E7D32),
+                                          ? const Color(0xFF8E2424)
+                                          : const Color(0xFF245A2A),
                                       backgroundColor: message.isError
-                                          ? const Color(0xFFFFEBEE)
-                                          : const Color(0xFFF1F8E9),
+                                          ? const Color(0xFFFCE5E3)
+                                          : const Color(0xFFEAF4E9),
                                     ),
+                                    codeblockPadding:
+                                        const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                    codeblockDecoration: BoxDecoration(
+                                      color: message.isError
+                                          ? const Color(0xFFFCE5E3)
+                                          : const Color(0xFFF1F6EF),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: message.isError
+                                            ? const Color(
+                                                0xFFE57373,
+                                              ).withValues(alpha: 0.45)
+                                            : const Color(0xFFDCE9D9),
+                                      ),
+                                    ),
+                                    blockquotePadding:
+                                        const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                    blockquoteDecoration: BoxDecoration(
+                                      color: message.isError
+                                          ? const Color(0xFFFCE5E3)
+                                          : const Color(0xFFF3F8F1),
+                                      border: const Border(
+                                        left: BorderSide(
+                                          color: Color(0xFF66BB6A),
+                                          width: 3,
+                                        ),
+                                      ),
+                                    ),
+                                    blockSpacing: 8,
                                   ),
                                 ),
                           if (message.isError &&
                               message.originalUserPrompt != null) ...[
-                            const SizedBox(height: 8),
-                            InkWell(
-                              onTap: _isTyping
-                                  ? null
-                                  : () => _retryMessage(message),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
+                            const SizedBox(height: 10),
+                            Tooltip(
+                              message: localizations.getText(
+                                'chat_retry_tooltip',
+                              ),
+                              child: Material(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                child: InkWell(
+                                  onTap: _isTyping
+                                      ? null
+                                      : () => _retryMessage(message),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFFEF5350),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.refresh,
-                                      size: 14,
-                                      color: Color(0xFFC62828),
+                                  child: Container(
+                                    constraints: const BoxConstraints(
+                                      minHeight: 44,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Retry',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFFC62828),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 13,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: const Color(
+                                          0xFFC62828,
+                                        ).withValues(alpha: 0.45),
                                       ),
                                     ),
-                                  ],
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.refresh_rounded,
+                                          size: 17,
+                                          color: Color(0xFFB3261E),
+                                        ),
+                                        const SizedBox(width: 7),
+                                        Text(
+                                          localizations.getText('retry'),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFFB3261E),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ],
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Text(
                             _formatTime(message.timestamp),
                             style: GoogleFonts.poppins(
-                              fontSize: 11,
+                              fontSize: 10,
                               color: message.isUser
-                                  ? Colors.white.withValues(alpha: 0.7)
+                                  ? Colors.white.withValues(alpha: 0.76)
                                   : message.isError
-                                  ? const Color(0xFFE57373)
+                                  ? const Color(0xFFB75D58)
                                   : Colors.grey[500],
+                              height: 1.2,
                             ),
                           ),
                         ],
@@ -596,29 +799,32 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   if (message.isUser) ...[
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 9),
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2E7D32), Color(0xFF388E3C)],
+                        color: const Color(0xFFE8F5E9),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(
+                            0xFF2E7D32,
+                          ).withValues(alpha: 0.12),
                         ),
-                        borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
                             color: const Color(
                               0xFF2E7D32,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 8,
+                            ).withValues(alpha: 0.1),
+                            blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: const Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 18,
+                        Icons.person_rounded,
+                        color: Color(0xFF2E7D32),
+                        size: 17,
                       ),
                     ),
                   ],
@@ -639,82 +845,81 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Widget _buildTypingIndicator() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(Icons.psychology, color: Colors.white, size: 16),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-                bottomLeft: Radius.circular(4),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
               ),
+              shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
+                  color: const Color(0xFF2E7D32).withValues(alpha: 0.18),
+                  blurRadius: 7,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildTypingDot(0),
-                const SizedBox(width: 4),
-                _buildTypingDot(1),
-                const SizedBox(width: 4),
-                _buildTypingDot(2),
-              ],
+            child: const Icon(
+              Icons.agriculture_rounded,
+              color: Colors.white,
+              size: 18,
             ),
+          ),
+          const SizedBox(width: 9),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+                bottomLeft: Radius.circular(6),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF183B1D).withValues(alpha: 0.07),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+              border: Border.all(color: const Color(0xFFE2EEE2)),
+            ),
+            child: const _TypingDots(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTypingDot(int index) {
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 600),
-      tween: Tween(begin: 0.0, end: 1.0),
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: (math.sin((value * math.pi * 2) + (index * 0.5)) * 0.3) + 0.7,
-          child: Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: Color(0xFF4CAF50),
-              shape: BoxShape.circle,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildQuickActions() {
-    final quickActions = [
-      {
-        'text': '🦠 Plant Disease',
-        'query': 'Help with plant disease diagnosis',
-      },
-      {'text': '🌧️ Weather Tips', 'query': 'Weather and irrigation advice'},
-      {'text': '🌱 Soil Health', 'query': 'Soil testing and fertilizer advice'},
-      {'text': '💰 Market Prices', 'query': 'What are current market prices?'},
+    final localizations = AppLocalizations.of(context)!;
+    final quickActions = <({String text, String query, IconData icon})>[
+      (
+        text: localizations.getText('chat_action_plant_disease'),
+        query: 'Help with plant disease diagnosis',
+        icon: Icons.health_and_safety_rounded,
+      ),
+      (
+        text: localizations.getText('chat_action_weather_tips'),
+        query: 'Weather and irrigation advice',
+        icon: Icons.cloud_rounded,
+      ),
+      (
+        text: localizations.getText('chat_action_soil_health'),
+        query: 'Soil testing and fertilizer advice',
+        icon: Icons.grass_rounded,
+      ),
+      (
+        text: localizations.getText('chat_action_market_prices'),
+        query: 'What are current market prices?',
+        icon: Icons.trending_up_rounded,
+      ),
     ];
 
     return Container(
@@ -722,77 +927,143 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '🚀 Quick Actions',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1B5E20),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: quickActions
-                .map(
-                  (action) => GestureDetector(
-                    onTap: () => _sendMessage(action['query']!),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        action['text']!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF1B5E20),
-                        ),
-                      ),
-                    ),
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 17,
+                  color: Color(0xFF388E3C),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  localizations.getText('chat_quick_actions'),
+                  softWrap: true,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1B5E20),
                   ),
-                )
-                .toList(),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth < 280 ? 1 : 2;
+              final cardWidth =
+                  (constraints.maxWidth - (columns - 1) * 8) / columns;
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: quickActions
+                    .map(
+                      (action) => SizedBox(
+                        width: cardWidth,
+                        child: Material(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          child: InkWell(
+                            onTap: () => _sendMessage(action.query),
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 62),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 9,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF2E7D32,
+                                  ).withValues(alpha: 0.14),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF183B1D,
+                                    ).withValues(alpha: 0.035),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE8F5E9),
+                                      borderRadius: BorderRadius.circular(11),
+                                    ),
+                                    child: Icon(
+                                      action.icon,
+                                      size: 19,
+                                      color: const Color(0xFF388E3C),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      action.text,
+                                      softWrap: true,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        height: 1.3,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF1B5E20),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
+          const SizedBox(height: 4),
         ],
       ),
     );
   }
 
   Widget _buildModernInputArea() {
+    final localizations = AppLocalizations.of(context)!;
+    final canSend = _messageController.text.trim().isNotEmpty && !_isTyping;
+
     return SafeArea(
+      top: false,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          color: const Color(0xFFFCFEFC),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
+              color: const Color(0xFF1B5E20).withValues(alpha: 0.08),
+              blurRadius: 18,
+              offset: const Offset(0, -4),
             ),
           ],
           border: Border(
             top: BorderSide(
-              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+              color: const Color(0xFF2E7D32).withValues(alpha: 0.12),
               width: 1,
             ),
           ),
@@ -808,13 +1079,29 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildQuickSuggestion('🌾', 'Crop advice'),
+                      _buildQuickSuggestion(
+                        '🌾',
+                        localizations.getText('chat_suggestion_crop'),
+                        promptText: 'Crop advice',
+                      ),
                       const SizedBox(width: 8),
-                      _buildQuickSuggestion('💰', 'Market prices'),
+                      _buildQuickSuggestion(
+                        '💰',
+                        localizations.getText('chat_suggestion_market'),
+                        promptText: 'Market prices',
+                      ),
                       const SizedBox(width: 8),
-                      _buildQuickSuggestion('🦠', 'Disease help'),
+                      _buildQuickSuggestion(
+                        '🦠',
+                        localizations.getText('chat_suggestion_disease'),
+                        promptText: 'Disease help',
+                      ),
                       const SizedBox(width: 8),
-                      _buildQuickSuggestion('🌧️', 'Weather info'),
+                      _buildQuickSuggestion(
+                        '🌧️',
+                        localizations.getText('chat_suggestion_weather'),
+                        promptText: 'Weather info',
+                      ),
                     ],
                   ),
                 ),
@@ -825,23 +1112,27 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // Attachment button
-                Container(
-                  margin: const EdgeInsets.only(right: 8, bottom: 4),
-                  child: GestureDetector(
-                    onTap: () {
-                      // Show attachment options (camera, gallery, etc.)
-                      _showAttachmentOptions();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const FaIcon(
-                        FontAwesomeIcons.paperclip,
-                        size: 16,
-                        color: Color(0xFF4CAF50),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8, bottom: 2),
+                  child: Tooltip(
+                    message: localizations.getText('chat_attachment_tooltip'),
+                    child: Material(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        onTap: _showAttachmentOptions,
+                        borderRadius: BorderRadius.circular(14),
+                        child: const SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Center(
+                            child: FaIcon(
+                              FontAwesomeIcons.paperclip,
+                              size: 17,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -852,10 +1143,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   child: Container(
                     constraints: const BoxConstraints(maxHeight: 120),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.circular(24),
+                      color: const Color(0xFFF4F8F3),
+                      borderRadius: BorderRadius.circular(22),
                       border: Border.all(
-                        color: const Color(0xFF4CAF50).withValues(alpha: 0.2),
+                        color: const Color(0xFF2E7D32).withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -865,39 +1156,38 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         fontSize: 14,
                         color: const Color(0xFF1B5E20),
                       ),
+                      minLines: 1,
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
                       textCapitalization: TextCapitalization.sentences,
+                      textAlignVertical: TextAlignVertical.center,
                       decoration: InputDecoration(
-                        hintText: 'Ask me anything about farming...',
+                        hintText: localizations.getText('chat_input_hint'),
                         hintStyle: GoogleFonts.poppins(
-                          color: Colors.grey[500],
+                          color: Colors.grey[600],
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        suffixIconConstraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
                         ),
                         suffixIcon: _messageController.text.isNotEmpty
-                            ? GestureDetector(
-                                onTap: () {
+                            ? IconButton(
+                                tooltip: localizations.getText(
+                                  'chat_clear_input_tooltip',
+                                ),
+                                onPressed: () {
                                   _messageController.clear();
                                   setState(() {});
                                 },
-                                child: Container(
-                                  margin: const EdgeInsets.all(8),
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
+                                icon: const Icon(Icons.close_rounded),
+                                iconSize: 18,
+                                visualDensity: VisualDensity.compact,
                               )
                             : null,
                       ),
@@ -911,33 +1201,44 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 const SizedBox(width: 8),
 
                 // Send button
-                GestureDetector(
-                  onTap: () => _sendMessage(_messageController.text),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: _messageController.text.trim().isNotEmpty
-                            ? [const Color(0xFF4CAF50), const Color(0xFF66BB6A)]
-                            : [Colors.grey[400]!, Colors.grey[500]!],
+                Semantics(
+                  button: true,
+                  enabled: canSend,
+                  label: localizations.getText('chat_send_tooltip'),
+                  child: Tooltip(
+                    message: localizations.getText('chat_send_tooltip'),
+                    child: GestureDetector(
+                      onTap: () => _sendMessage(_messageController.text),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: canSend
+                              ? const Color(0xFF388E3C)
+                              : const Color(0xFFB0BDB0),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: canSend
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF2E7D32,
+                                    ).withValues(alpha: 0.22),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Icon(
+                          Icons.send_rounded,
+                          color: Colors.white.withValues(
+                            alpha: canSend ? 1 : 0.75,
+                          ),
+                          size: 21,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(26),
-                      boxShadow: _messageController.text.trim().isNotEmpty
-                          ? [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF4CAF50,
-                                ).withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 22,
                     ),
                   ),
                 ),
@@ -949,104 +1250,126 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildQuickSuggestion(String emoji, String text) {
-    return GestureDetector(
-      onTap: () {
-        _messageController.text = 'Tell me about $text';
-        setState(() {});
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFF4CAF50).withValues(alpha: 0.2),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 4),
-            Text(
-              text,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: const Color(0xFF1B5E20),
-                fontWeight: FontWeight.w500,
-              ),
+  Widget _buildQuickSuggestion(
+    String emoji,
+    String text, {
+    required String promptText,
+  }) {
+    return Material(
+      color: const Color(0xFFF4F9F1),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: () {
+          _messageController.text = 'Tell me about $promptText';
+          setState(() {});
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFF2E7D32).withValues(alpha: 0.16),
             ),
-          ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 15)),
+              const SizedBox(width: 6),
+              Text(
+                text,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: const Color(0xFF1B5E20),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _showAttachmentOptions() {
+    final localizations = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      builder: (context) => SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Share with AI Assistant',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1B5E20),
+              const SizedBox(height: 20),
+              Text(
+                localizations.getText('chat_attachment_title'),
+                textAlign: TextAlign.center,
+                softWrap: true,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1B5E20),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildAttachmentOption(
-                  FontAwesomeIcons.camera,
-                  'Camera',
-                  'Take photo',
-                  () {
-                    Navigator.pop(context);
-                    // Implement camera functionality
-                  },
-                ),
-                _buildAttachmentOption(
-                  FontAwesomeIcons.images,
-                  'Gallery',
-                  'Choose photo',
-                  () {
-                    Navigator.pop(context);
-                    // Implement gallery functionality
-                  },
-                ),
-                _buildAttachmentOption(
-                  FontAwesomeIcons.locationDot,
-                  'Location',
-                  'Share location',
-                  () {
-                    Navigator.pop(context);
-                    // Implement location sharing
-                  },
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildAttachmentOption(
+                      FontAwesomeIcons.camera,
+                      localizations.getText('chat_attachment_camera'),
+                      localizations.getText('chat_attachment_camera_subtitle'),
+                      () {
+                        Navigator.pop(context);
+                        // Implement camera functionality
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildAttachmentOption(
+                      FontAwesomeIcons.images,
+                      localizations.getText('chat_attachment_gallery'),
+                      localizations.getText('chat_attachment_gallery_subtitle'),
+                      () {
+                        Navigator.pop(context);
+                        // Implement gallery functionality
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildAttachmentOption(
+                      FontAwesomeIcons.locationDot,
+                      localizations.getText('chat_attachment_location'),
+                      localizations.getText(
+                        'chat_attachment_location_subtitle',
+                      ),
+                      () {
+                        Navigator.pop(context);
+                        // Implement location sharing
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1058,32 +1381,40 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     String subtitle,
     VoidCallback onTap,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
+    return Semantics(
+      button: true,
+      label: '$title, $subtitle',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: FaIcon(icon, color: const Color(0xFF4CAF50), size: 24),
             ),
-            child: FaIcon(icon, color: const Color(0xFF4CAF50), size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1B5E20),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              softWrap: true,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1B5E20),
+              ),
             ),
-          ),
-          Text(
-            subtitle,
-            style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600]),
-          ),
-        ],
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              softWrap: true,
+              style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600]),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1244,6 +1575,67 @@ class _ChatInputBar extends StatelessWidget {
             child: const Icon(Icons.send, size: 20, color: Colors.white),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: AppLocalizations.of(context)!.getText('chat_typing_label'),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(3, (index) {
+          return Padding(
+            padding: EdgeInsets.only(right: index == 2 ? 0 : 5),
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                final phase = (_controller.value + index / 3) % 1;
+                final pulse = (math.sin(phase * math.pi * 2) + 1) / 2;
+                return Transform.scale(
+                  scale: 0.72 + pulse * 0.28,
+                  child: Opacity(opacity: 0.5 + pulse * 0.5, child: child),
+                );
+              },
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF388E3C),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

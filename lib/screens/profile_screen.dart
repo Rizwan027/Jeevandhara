@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../localization/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,6 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     User user,
     String currentName,
   ) async {
+    final localization = AppLocalizations.of(context)!;
     final name = await showDialog<String>(
       context: context,
       builder: (_) => _EditNameDialog(initialName: currentName),
@@ -29,10 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(
@@ -40,11 +42,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: Colors.white,
               ),
             ),
-            SizedBox(width: 12),
-            Text('Updating profile name...'),
+            const SizedBox(width: 12),
+            Text(localization.getText('profile_updating_name')),
           ],
         ),
-        duration: Duration(seconds: 1),
+        duration: const Duration(seconds: 1),
       ),
     );
 
@@ -56,13 +58,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!context.mounted) return;
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Profile name updated successfully.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.getText('profile_name_updated'),
+          ),
+        ),
       );
-    } on FirebaseException catch (error) {
+    } on FirebaseException {
       if (!context.mounted) return;
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        SnackBar(content: Text(error.message ?? 'Could not update your name.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.getText('profile_name_update_failed'),
+          ),
+        ),
       );
     }
   }
@@ -71,18 +81,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final shouldSignOut = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text(
-          'You will need to sign in again to access your account.',
+        title: Text(
+          AppLocalizations.of(context)!.getText('profile_sign_out_title'),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.getText('profile_sign_out_body'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.getText('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign out'),
+            child: Text(AppLocalizations.of(context)!.getText('sign_out')),
           ),
         ],
       ),
@@ -96,14 +108,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await user.sendEmailVerification();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Verification email sent.')));
-    } on FirebaseAuthException catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.getText('profile_verification_sent'),
+          ),
+        ),
+      );
+    } on FirebaseAuthException {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.message ?? 'Could not send verification email.'),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.getText('profile_verification_failed'),
+          ),
         ),
       );
     }
@@ -114,21 +134,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final password = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete account?'),
+        title: Text(
+          AppLocalizations.of(dialogContext)!.getText('profile_delete_title'),
+        ),
         content: TextField(
           controller: passwordController,
           obscureText: true,
-          decoration: const InputDecoration(labelText: 'Password to confirm'),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(
+              dialogContext,
+            )!.getText('profile_confirm_password'),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(dialogContext)!.getText('cancel')),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, passwordController.text),
-            child: const Text('Delete'),
+            child: Text(
+              AppLocalizations.of(dialogContext)!.getText('delete_account'),
+            ),
           ),
         ],
       ),
@@ -152,16 +180,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SnackBar(
           content: Text(
             error.code == 'requires-recent-login'
-                ? 'Please sign in again before deleting your account.'
-                : error.message ?? 'Could not delete your account.',
+                ? AppLocalizations.of(
+                    context,
+                  )!.getText('profile_reauth_required')
+                : AppLocalizations.of(
+                    context,
+                  )!.getText('profile_delete_account_failed'),
           ),
         ),
       );
-    } on FirebaseException catch (error) {
+    } on FirebaseException {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.message ?? 'Could not delete your profile.'),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.getText('profile_delete_profile_failed'),
+          ),
         ),
       );
     }
@@ -169,15 +205,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text('No signed-in account.')));
+      return Scaffold(
+        body: Center(
+          child: Text(localization.getText('profile_no_signed_in_account')),
+        ),
+      );
     }
 
     return Scaffold(
       backgroundColor: ProfileScreen._lightGreen,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(localization.getText('profile')),
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         foregroundColor: ProfileScreen._green,
@@ -200,7 +241,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Icon(Icons.cloud_off, size: 48, color: Colors.red),
                     const SizedBox(height: 12),
                     Text(
-                      'Unable to load profile',
+                      localization.getText('profile_unable_load'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -208,11 +249,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${snapshot.error}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    ),
                     const SizedBox(height: 16),
                     FilledButton.icon(
                       onPressed: () {
@@ -221,7 +257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
+                      label: Text(localization.getText('retry')),
                       style: FilledButton.styleFrom(
                         backgroundColor: ProfileScreen._green,
                       ),
@@ -237,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final data = snapshot.data?.data();
           final name = (data?['name'] as String?)?.trim().isNotEmpty == true
               ? (data?['name'] as String).trim()
-              : user.displayName ?? 'Farmer';
+              : user.displayName ?? localization.getText('profile_farmer');
           final initial = name.isEmpty
               ? '?'
               : name.characters.first.toUpperCase();
@@ -283,7 +319,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user.email ?? 'No email available',
+                      user.email ?? localization.getText('profile_no_email'),
                       style: TextStyle(color: Colors.grey[700]),
                     ),
                   ],
@@ -292,27 +328,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
               _ProfileAction(
                 icon: Icons.edit_outlined,
-                title: 'Edit name',
-                subtitle: 'Update the name shown on your profile',
+                title: localization.getText('edit_name'),
+                subtitle: localization.getText('profile_edit_name_subtitle'),
                 onTap: () => _editName(context, user, name),
               ),
               _ProfileAction(
                 icon: Icons.email_outlined,
-                title: 'Email address',
-                subtitle: user.email ?? 'No email available',
+                title: localization.getText('email_address'),
+                subtitle:
+                    user.email ?? localization.getText('profile_no_email'),
               ),
               _ProfileAction(
                 icon: Icons.settings_outlined,
-                title: 'Settings',
-                subtitle: 'Language and onboarding preferences',
+                title: localization.getText('settings'),
+                subtitle: localization.getText('profile_settings_subtitle'),
                 onTap: () => Navigator.pushNamed(context, '/settings'),
               ),
               _ProfileAction(
                 icon: Icons.verified_user_outlined,
-                title: 'Account status',
+                title: localization.getText('account_status'),
                 subtitle: user.emailVerified
-                    ? 'Email verified'
-                    : 'Email not verified',
+                    ? localization.getText('profile_email_verified')
+                    : localization.getText('profile_email_not_verified'),
                 onTap: user.emailVerified
                     ? null
                     : () => _sendVerification(context, user),
@@ -321,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               OutlinedButton.icon(
                 onPressed: () => _signOut(context),
                 icon: const Icon(Icons.logout),
-                label: const Text('Sign out'),
+                label: Text(localization.getText('sign_out')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red[700],
                   side: BorderSide(color: Colors.red[200]!),
@@ -332,7 +369,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextButton.icon(
                 onPressed: () => _deleteAccount(context, user),
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Delete account'),
+                label: Text(localization.getText('delete_account')),
                 style: TextButton.styleFrom(foregroundColor: Colors.red[700]),
               ),
             ],
@@ -370,26 +407,28 @@ class _EditNameDialogState extends State<_EditNameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('Edit name'),
+      title: Text(localization.getText('edit_name')),
       content: Form(
         key: _formKey,
         child: TextFormField(
           controller: _controller,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Name',
+          decoration: InputDecoration(
+            labelText: localization.getText('auth_name_label'),
             border: OutlineInputBorder(),
           ),
-          validator: (value) =>
-              value == null || value.trim().isEmpty ? 'Enter your name' : null,
+          validator: (value) => value == null || value.trim().isEmpty
+              ? localization.getText('auth_enter_name')
+              : null,
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(localization.getText('cancel')),
         ),
         FilledButton(
           onPressed: () {
@@ -397,7 +436,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
               Navigator.pop(context, _controller.text.trim());
             }
           },
-          child: const Text('Save'),
+          child: Text(localization.getText('save')),
         ),
       ],
     );

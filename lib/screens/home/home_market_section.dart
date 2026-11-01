@@ -19,18 +19,19 @@ class HomeMarketSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!;
     return Container(
       key: const ValueKey('home-market-section'),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFDCEFE0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF315D3E).withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -40,26 +41,26 @@ class HomeMarketSection extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF059669).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.show_chart,
-                  color: Color(0xFF059669),
-                  size: 16,
+                  color: Color(0xFF287A45),
+                  size: 21,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Market prices',
+                  localization.getText('home_market_title'),
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 17,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
+                    color: const Color(0xFF183B27),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -67,52 +68,66 @@ class HomeMarketSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           if (isLoading)
-            _buildStateMessage(Icons.sync, 'Loading market prices...')
+            _buildStateMessage(
+              Icons.sync,
+              localization.getText('home_market_loading'),
+              color: const Color(0xFF287A45),
+            )
           else if (hasError)
             _buildStateMessage(
               Icons.cloud_off,
-              'Market prices are currently unavailable.',
+              localization.getText('home_market_unavailable'),
+              color: const Color(0xFF9A6B18),
             )
           else if (marketPrices.isEmpty)
             _buildStateMessage(
               Icons.inbox_outlined,
-              'No market prices available.',
+              localization.getText('home_market_empty'),
+              color: const Color(0xFF6B8F3E),
             )
           else
-            Column(children: marketPrices.map(_buildMarketPriceCard).toList()),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: onViewAnalysis,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF059669),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.insights, color: Colors.white, size: 16),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      AppLocalizations.of(
-                        context,
-                      )!.getText('view_detailed_analysis'),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+            Column(
+              children: marketPrices
+                  .map((price) => _buildMarketPriceCard(context, price))
+                  .toList(),
+            ),
+          const SizedBox(height: 10),
+          Material(
+            color: const Color(0xFF287A45),
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              onTap: onViewAnalysis,
+              borderRadius: BorderRadius.circular(14),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 14,
                   ),
-                ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.insights, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          localization.getText('view_detailed_analysis'),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -121,62 +136,108 @@ class HomeMarketSection extends StatelessWidget {
     );
   }
 
-  Widget _buildMarketPriceCard(MarketPrice price) {
+  Widget _buildMarketPriceCard(BuildContext context, MarketPrice price) {
+    final localization = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: const Color(0xFFF7F9F6),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2EBDD)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    price.commodity,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827),
-                    ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 300;
+                final commodity = Text(
+                  price.commodity,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF183B27),
                   ),
-                ),
-                Text(
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                );
+                final priceText = Text(
                   '₹${price.modalPrice.toStringAsFixed(0)}/qtl',
                   style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF374151),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF287A45),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                );
+                return isNarrow
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          commodity,
+                          const SizedBox(height: 4),
+                          priceText,
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(child: commodity),
+                          const SizedBox(width: 8),
+                          Flexible(child: priceText),
+                        ],
+                      );
+              },
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: Color(0xFF6B8F3E),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    '${price.market}, ${price.state}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFF455B49),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
-              '${price.market}, ${price.state}',
+              localization
+                  .getText('home_market_arrival')
+                  .replaceAll('{date}', _formatDate(price.priceDate)),
               style: GoogleFonts.inter(
-                fontSize: 10,
-                color: const Color(0xFF374151),
+                fontSize: 11,
+                color: const Color(0xFF657467),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            Text(
-              'Arrival: ${_formatDate(price.priceDate)}',
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                color: const Color(0xFF6B7280),
-              ),
-            ),
+            const SizedBox(height: 2),
             Text(
               price.source,
               style: GoogleFonts.inter(
-                fontSize: 9,
-                color: const Color(0xFF6B7280),
+                fontSize: 11,
+                color: const Color(0xFF657467),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -184,22 +245,44 @@ class HomeMarketSection extends StatelessWidget {
     );
   }
 
-  Widget _buildStateMessage(IconData icon, String message) {
+  Widget _buildStateMessage(
+    IconData icon,
+    String message, {
+    required Color color,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Column(
-        children: [
-          Icon(icon, color: const Color(0xFF6B7280), size: 28),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: const Color(0xFF6B7280),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F9F6),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2EBDD)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color, size: 22),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                height: 1.35,
+                color: const Color(0xFF526456),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

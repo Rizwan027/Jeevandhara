@@ -12,6 +12,71 @@ import 'screens/onboarding_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/main_navigation.dart';
 
+const Map<String, String> appLanguages = {
+  'en': 'English',
+  'hi': 'हिंदी',
+  'mr': 'मराठी',
+};
+
+const String selectedLanguagePreferenceKey = 'selected_language';
+
+Future<void> showLanguageSelector(BuildContext context) async {
+  final localization = AppLocalizations.of(context)!;
+  final selectedCode = await showModalBottomSheet<String>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+            child: Text(
+              localization.getText('choose_language'),
+              style: Theme.of(sheetContext).textTheme.titleLarge,
+            ),
+          ),
+          ...appLanguages.entries.map((language) {
+            final isSelected =
+                MyApp.of(context).locale.languageCode == language.key;
+            return ListTile(
+              title: Text(language.value),
+              trailing: isSelected
+                  ? const Icon(Icons.check_circle, color: Color(0xFF4CAF50))
+                  : null,
+              selected: isSelected,
+              onTap: () => Navigator.pop(sheetContext, language.key),
+            );
+          }),
+        ],
+      ),
+    ),
+  );
+  if (selectedCode == null || !context.mounted) return;
+
+  try {
+    await MyApp.of(context).setLocale(Locale(selectedCode));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.getText('language_updated'),
+        ),
+      ),
+    );
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not save language preference.')),
+    );
+    developer.log(
+      'Could not save selected language.',
+      error: error,
+      name: 'Localization',
+    );
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -43,6 +108,8 @@ class MyApp extends StatefulWidget {
 class MyAppState extends State<MyApp> {
   Locale _locale = const Locale('en', '');
 
+  Locale get locale => _locale;
+
   @override
   void initState() {
     super.initState();
@@ -51,27 +118,59 @@ class MyAppState extends State<MyApp> {
 
   Future<void> _restoreLanguage() async {
     final prefs = await SharedPreferences.getInstance();
-    final language = prefs.getString('selected_language');
-    if (!mounted || language == null) return;
-    setLocale(_localeForLanguage(language));
-  }
-
-  Locale _localeForLanguage(String language) {
-    const locales = {
-      'Hindi': Locale('hi'),
-      'Telugu': Locale('te'),
-      'Tamil': Locale('ta'),
-      'Bengali': Locale('bn'),
-      'Marathi': Locale('mr'),
-      'English': Locale('en'),
-    };
-    return locales[language] ?? const Locale('en');
-  }
-
-  void setLocale(Locale newLocale) {
+    final storedLanguage = prefs.getString(selectedLanguagePreferenceKey);
+    if (storedLanguage == null) return;
+    final restoredLocale = _localeForPreference(storedLanguage);
+    if (storedLanguage != restoredLocale.languageCode) {
+      await prefs.setString(
+        selectedLanguagePreferenceKey,
+        restoredLocale.languageCode,
+      );
+    }
+    if (!mounted) return;
     setState(() {
-      _locale = newLocale;
+      _locale = restoredLocale;
     });
+  }
+
+  Locale _localeForPreference(String language) {
+    switch (language.trim().toLowerCase()) {
+      case 'hi':
+      case 'hindi':
+        return const Locale('hi');
+      case 'mr':
+      case 'marathi':
+        return const Locale('mr');
+      case 'en':
+      case 'english':
+      case 'te':
+      case 'telugu':
+      case 'ta':
+      case 'tamil':
+      case 'bn':
+      case 'bengali':
+      default:
+        return const Locale('en');
+    }
+  }
+
+  Future<void> setLocale(Locale newLocale) async {
+    final locale = _localeForPreference(newLocale.languageCode);
+    final previousLocale = _locale;
+    setState(() {
+      _locale = locale;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(selectedLanguagePreferenceKey, locale.languageCode);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _locale = previousLocale;
+        });
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -94,9 +193,6 @@ class MyAppState extends State<MyApp> {
       supportedLocales: const [
         Locale('en', ''), // English
         Locale('hi', ''), // Hindi
-        Locale('te', ''), // Telugu
-        Locale('ta', ''), // Tamil
-        Locale('bn', ''), // Bengali
         Locale('mr', ''), // Marathi
       ],
       home: AuthGate(firebaseError: widget.firebaseError),
@@ -132,7 +228,26 @@ class AuthGate extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        if (!snapshot.hasData) return const AuthScreen();
+        if (!snapshot.hasData) {
+          return Stack(
+            children: [
+              const Positioned.fill(child: AuthScreen()),
+              Positioned(
+                top: 4,
+                right: 8,
+                child: SafeArea(
+                  child: IconButton.filledTonal(
+                    tooltip: AppLocalizations.of(
+                      context,
+                    )!.getText('choose_language'),
+                    onPressed: () => showLanguageSelector(context),
+                    icon: const Icon(Icons.language),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
         final user = snapshot.data!;
         developer.log(
           '[AUTH] profile loading started for ${user.uid}',
@@ -235,35 +350,8 @@ class FirebaseFailureScreen extends StatelessWidget {
 class LanguageSelectionScreen extends StatelessWidget {
   const LanguageSelectionScreen({super.key});
 
-  Locale _getLocale(String languageName) {
-    switch (languageName) {
-      case 'Hindi':
-        return const Locale('hi', '');
-      case 'Telugu':
-        return const Locale('te', '');
-      case 'Tamil':
-        return const Locale('ta', '');
-      case 'Bengali':
-        return const Locale('bn', '');
-      case 'Marathi':
-        return const Locale('mr', '');
-      case 'English':
-      default:
-        return const Locale('en', '');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> languages = [
-      {'name': 'English', 'nativeName': 'English'},
-      {'name': 'Hindi', 'nativeName': 'हिंदी'},
-      {'name': 'Marathi', 'nativeName': 'मराठी'},
-      {'name': 'Telugu', 'nativeName': 'తెలుగు'},
-      {'name': 'Tamil', 'nativeName': 'தமிழ்'},
-      {'name': 'Bengali', 'nativeName': 'বাংলা'},
-    ];
-
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -287,8 +375,8 @@ class LanguageSelectionScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
                       // Subtitle
-                      const Text(
-                        'Select your preferred language',
+                      Text(
+                        AppLocalizations.of(context)!.getText('selectLanguage'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Color(0xFF2E7D32),
@@ -316,7 +404,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                         child: ListView.separated(
                           shrinkWrap: true,
                           physics: const ClampingScrollPhysics(),
-                          itemCount: languages.length,
+                          itemCount: appLanguages.length,
                           separatorBuilder: (context, index) => const Divider(
                             height: 1,
                             color: Color(0xFFE0E0E0),
@@ -324,6 +412,12 @@ class LanguageSelectionScreen extends StatelessWidget {
                             endIndent: 20,
                           ),
                           itemBuilder: (context, index) {
+                            final language = appLanguages.entries.elementAt(
+                              index,
+                            );
+                            final isSelected =
+                                MyApp.of(context).locale.languageCode ==
+                                language.key;
                             return ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -334,18 +428,11 @@ class LanguageSelectionScreen extends StatelessWidget {
                                   vertical: 4,
                                 ),
                                 child: Text(
-                                  languages[index]['nativeName']!,
+                                  language.value,
                                   style: TextStyle(
-                                    fontSize:
-                                        languages[index]['name'] == 'Bengali'
-                                        ? 14
-                                        : 16,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black87,
-                                    fontFamily:
-                                        languages[index]['name'] == 'Bengali'
-                                        ? 'Roboto'
-                                        : null,
                                     height: 1.2,
                                   ),
                                   maxLines: 2,
@@ -353,34 +440,46 @@ class LanguageSelectionScreen extends StatelessWidget {
                                 ),
                               ),
                               subtitle: Text(
-                                languages[index]['name']!,
+                                language.key.toUpperCase(),
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey,
                                 ),
                               ),
-                              trailing: const Icon(
-                                Icons.arrow_forward_ios,
+                              trailing: Icon(
+                                isSelected
+                                    ? Icons.check_circle
+                                    : Icons.arrow_forward_ios,
                                 size: 16,
-                                color: Color(0xFF4CAF50),
+                                color: const Color(0xFF4CAF50),
                               ),
-                              onTap: () {
-                                final newLocale = _getLocale(
-                                  languages[index]['name']!,
-                                );
-                                MyApp.of(context).setLocale(newLocale);
-                                SharedPreferences.getInstance().then(
-                                  (prefs) => prefs.setString(
-                                    'selected_language',
-                                    languages[index]['name']!,
-                                  ),
-                                );
+                              onTap: () async {
+                                try {
+                                  await MyApp.of(
+                                    context,
+                                  ).setLocale(Locale(language.key));
+                                } catch (error) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Could not save language preference.',
+                                      ),
+                                    ),
+                                  );
+                                  developer.log(
+                                    'Could not save selected language.',
+                                    error: error,
+                                    name: 'Localization',
+                                  );
+                                  return;
+                                }
+                                if (!context.mounted) return;
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => OnboardingScreen(
-                                      selectedLanguage:
-                                          languages[index]['name']!,
+                                      selectedLanguage: language.key,
                                     ),
                                   ),
                                 );

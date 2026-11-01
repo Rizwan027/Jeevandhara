@@ -13,43 +13,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const _languages = {
-    'English': Locale('en'),
-    'Hindi': Locale('hi'),
-    'Marathi': Locale('mr'),
-    'Telugu': Locale('te'),
-    'Tamil': Locale('ta'),
-    'Bengali': Locale('bn'),
-  };
-
-  Future<void> _changeLanguage() async {
-    final selected = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(AppLocalizations.of(context)!.getText('choose_language')),
-        children: _languages.keys
-            .map(
-              (name) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(dialogContext, name),
-                child: Text(name),
-              ),
-            )
-            .toList(),
-      ),
-    );
-    if (!mounted || selected == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selected_language', selected);
-    if (!mounted) return;
-    MyApp.of(context).setLocale(_languages[selected]!);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppLocalizations.of(context)!.getText('language_updated'),
-        ),
-      ),
-    );
-  }
+  Future<void> _changeLanguage() => showLanguageSelector(context);
 
   Future<void> _restartOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -58,10 +22,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await prefs.remove('onboarding_complete_$userId');
     }
     if (!mounted) return;
-    final selectedLanguage = prefs.getString('selected_language') ?? 'English';
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => OnboardingScreen(selectedLanguage: selectedLanguage),
+        builder: (_) => OnboardingScreen(
+          selectedLanguage: MyApp.of(context).locale.languageCode,
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:jeevandhara/main.dart';
 import 'package:jeevandhara/localization/app_localizations.dart';
@@ -15,6 +16,33 @@ import 'package:jeevandhara/screens/auth_screen.dart';
 import 'package:jeevandhara/widgets/main_navigation.dart';
 
 void main() {
+  testWidgets('language preference restores and migrates legacy names', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({'selected_language': 'Marathi'});
+
+    await tester.pumpWidget(MyApp(firebaseError: StateError('test')));
+    await tester.pumpAndSettle();
+
+    var appState = tester.state<MyAppState>(find.byType(MyApp));
+    expect(appState.locale, const Locale('mr'));
+    var preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString('selected_language'), 'mr');
+
+    final localeChange = appState.setLocale(const Locale('hi'));
+    expect(appState.locale, const Locale('hi'));
+    await localeChange;
+    preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString('selected_language'), 'hi');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(MyApp(firebaseError: StateError('test')));
+    await tester.pumpAndSettle();
+
+    appState = tester.state<MyAppState>(find.byType(MyApp));
+    expect(appState.locale, const Locale('hi'));
+  });
+
   testWidgets('app renders a startup state', (WidgetTester tester) async {
     await tester.pumpWidget(MyApp(firebaseError: StateError('test')));
     await tester.pumpAndSettle();
@@ -52,7 +80,19 @@ void main() {
   testWidgets('password visibility control exposes its current action', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: AuthScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const AuthScreen(),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('hi'), Locale('mr')],
+      ),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.byTooltip('Show password'), findsOneWidget);
     await tester.tap(find.byTooltip('Show password'));
@@ -63,7 +103,19 @@ void main() {
   testWidgets('login loading state exits when authentication throws', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: AuthScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const AuthScreen(),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('hi'), Locale('mr')],
+      ),
+    );
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byType(TextFormField).at(0),
       'farmer@example.com',

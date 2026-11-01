@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../localization/app_localizations.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -87,14 +88,18 @@ class _AuthScreenState extends State<AuthScreen> {
 
         if (!mounted) return;
         if (!profileSaved || !verificationSent) {
+          final localization = AppLocalizations.of(context)!;
           final pendingTasks = [
-            if (!profileSaved) 'profile setup',
-            if (!verificationSent) 'verification email',
-          ].join(' and ');
+            if (!profileSaved) localization.getText('auth_profile_setup'),
+            if (!verificationSent)
+              localization.getText('auth_verification_email'),
+          ].join(' ${localization.getText('auth_and')} ');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Account created. Complete $pendingTasks later from your profile.',
+                localization
+                    .getText('auth_account_created_tasks')
+                    .replaceAll('{tasks}', pendingTasks),
               ),
             ),
           );
@@ -102,9 +107,13 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } on FirebaseAuthException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_authErrorMessage(error))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _authErrorMessage(error, AppLocalizations.of(context)!),
+          ),
+        ),
+      );
       developer.log(
         '[AUTH] Firebase auth failed: ${error.code}',
         error: error,
@@ -114,56 +123,64 @@ class _AuthScreenState extends State<AuthScreen> {
       developer.log('[AUTH] auth operation timed out', name: 'Auth');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Sign-in timed out. Check your connection and try again.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.getText('auth_timeout')),
         ),
       );
-    } on FirebaseException catch (error) {
+    } on FirebaseException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.message ?? 'Unable to save your profile.'),
+          content: Text(
+            AppLocalizations.of(context)!.getText('auth_save_profile_failed'),
+          ),
         ),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to sign in. Please try again.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.getText('auth_sign_in_failed'),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  String _authErrorMessage(FirebaseAuthException error) {
+  String _authErrorMessage(
+    FirebaseAuthException error,
+    AppLocalizations localization,
+  ) {
     switch (error.code) {
       case 'email-already-in-use':
-        return 'An account already exists for this email.';
+        return localization.getText('auth_email_exists');
       case 'invalid-email':
-        return 'Enter a valid email address.';
+        return localization.getText('auth_invalid_email_error');
       case 'invalid-credential':
       case 'wrong-password':
       case 'user-not-found':
-        return 'The email or password is incorrect.';
+        return localization.getText('auth_credentials_invalid');
       case 'operation-not-allowed':
-        return 'Email sign-in is disabled for this Firebase project. Enable Email/Password in Firebase Console.';
+        return localization.getText('auth_sign_in_disabled');
       case 'user-disabled':
-        return 'This account has been disabled. Contact support.';
+        return localization.getText('auth_account_disabled');
       case 'too-many-requests':
-        return 'Too many attempts. Wait a few minutes and try again.';
+        return localization.getText('auth_too_many_attempts');
       case 'network-request-failed':
-        return 'Network connection failed. Check your internet connection and try again.';
+        return localization.getText('auth_network_failed');
       case 'weak-password':
-        return 'Use a password with at least 6 characters.';
+        return localization.getText('auth_weak_password');
       default:
-        return error.message ?? 'Authentication failed.';
+        return localization.getText('auth_failed');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!;
     final green = const Color(0xFF4CAF50);
     return Scaffold(
       body: SafeArea(
@@ -180,7 +197,9 @@ class _AuthScreenState extends State<AuthScreen> {
                     Icon(Icons.eco, size: 72, color: green),
                     const SizedBox(height: 16),
                     Text(
-                      _isLogin ? 'Welcome back' : 'Create your account',
+                      localization.getText(
+                        _isLogin ? 'auth_welcome_back' : 'auth_create_account',
+                      ),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 28,
@@ -191,8 +210,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 8),
                     Text(
                       _isLogin
-                          ? 'Sign in to continue to Jeevandhara'
-                          : 'Join Jeevandhara to get personalized farming advice',
+                          ? localization.getText('auth_sign_in_subtitle')
+                          : localization.getText('auth_sign_up_subtitle'),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[700]),
                     ),
@@ -201,14 +220,14 @@ class _AuthScreenState extends State<AuthScreen> {
                       TextFormField(
                         controller: _nameController,
                         textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
+                        decoration: InputDecoration(
+                          labelText: localization.getText('auth_name_label'),
                           prefixIcon: Icon(Icons.person_outline),
                           border: OutlineInputBorder(),
                         ),
                         validator: (value) =>
                             value == null || value.trim().isEmpty
-                            ? 'Enter your name'
+                            ? localization.getText('auth_enter_name')
                             : null,
                       ),
                       const SizedBox(height: 16),
@@ -217,20 +236,20 @@ class _AuthScreenState extends State<AuthScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
+                      decoration: InputDecoration(
+                        labelText: localization.getText('auth_email_label'),
                         prefixIcon: Icon(Icons.email_outlined),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Enter your email';
+                          return localization.getText('auth_enter_email');
                         }
                         final emailPattern = RegExp(
                           r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
                         );
                         if (!emailPattern.hasMatch(value.trim())) {
-                          return 'Enter a valid email';
+                          return localization.getText('auth_invalid_email');
                         }
                         return null;
                       },
@@ -240,12 +259,12 @@ class _AuthScreenState extends State<AuthScreen> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: localization.getText('auth_password_label'),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           tooltip: _obscurePassword
-                              ? 'Show password'
-                              : 'Hide password',
+                              ? localization.getText('auth_show_password')
+                              : localization.getText('auth_hide_password'),
                           onPressed: () => setState(
                             () => _obscurePassword = !_obscurePassword,
                           ),
@@ -259,10 +278,12 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Enter your password';
+                          return localization.getText('auth_enter_password');
                         }
                         if (!_isLogin && value.length < 6) {
-                          return 'Use at least 6 characters';
+                          return localization.getText(
+                            'auth_password_min_length',
+                          );
                         }
                         return null;
                       },
@@ -285,14 +306,20 @@ class _AuthScreenState extends State<AuthScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                            : Text(_isLogin ? 'Sign in' : 'Sign up'),
+                            : Text(
+                                localization.getText(
+                                  _isLogin ? 'auth_sign_in' : 'auth_sign_up',
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     if (_isLogin)
                       TextButton(
                         onPressed: _isLoading ? null : _sendPasswordReset,
-                        child: const Text('Forgot password?'),
+                        child: Text(
+                          localization.getText('auth_forgot_password'),
+                        ),
                       ),
                     const SizedBox(height: 4),
                     TextButton(
@@ -301,8 +328,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           : () => setState(() => _isLogin = !_isLogin),
                       child: Text(
                         _isLogin
-                            ? 'Don’t have an account? Sign up'
-                            : 'Already have an account? Sign in',
+                            ? localization.getText('auth_no_account')
+                            : localization.getText('auth_have_account'),
                       ),
                     ),
                   ],
@@ -316,24 +343,31 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _sendPasswordReset() async {
+    final localization = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Enter your email first.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            localization.getText('auth_password_reset_enter_email'),
+          ),
+        ),
+      );
       return;
     }
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset email sent.')),
+        SnackBar(
+          content: Text(localization.getText('auth_password_reset_sent')),
+        ),
       );
     } on FirebaseAuthException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_authErrorMessage(error))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_authErrorMessage(error, localization))),
+      );
     }
   }
 

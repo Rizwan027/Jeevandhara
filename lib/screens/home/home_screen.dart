@@ -218,82 +218,116 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               // Header Section
               Container(
-                padding: const EdgeInsets.all(24),
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFF0FDF4), Color(0xFFE8F5E9)],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFDCEFE0)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _getTimeOfDay(context),
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  color: const Color(0xFF6B7280),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < 340;
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _getTimeOfDay(context),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: const Color(0xFF52705B),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.getText('hello_farmer'),
+                                    style: GoogleFonts.inter(
+                                      fontSize: isNarrow ? 22 : 26,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.15,
+                                      color: const Color(0xFF183B27),
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.getText('hello_farmer'),
-                                style: GoogleFonts.inter(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF111827),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: 8),
+                            // Keep these as visual controls; they have no actions today.
+                            Semantics(
+                              label: AppLocalizations.of(
+                                context,
+                              )!.getText('home_notifications'),
+                              button: true,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: const Color(0xFFD5E7D9),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.notifications_outlined,
+                                      color: Color(0xFF42634B),
+                                      size: 21,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF287A45),
+                                      borderRadius: BorderRadius.circular(14),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(
+                                            0xFF287A45,
+                                          ).withValues(alpha: 0.18),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.person_outline,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        // Profile and notification
-                        Semantics(
-                          label: 'Notifications',
-                          button: true,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF3F4F6),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.notifications_outlined,
-                                  color: const Color(0xFF6B7280),
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 22),
                     // Quick Actions
                     _buildQuickActions(),
                   ],
@@ -387,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: _buildQuickActionCard(
             AppLocalizations.of(context)!.getText('crop_advice'),
             Icons.eco_outlined,
-            const Color(0xFF10B981),
+            const Color(0xFF287A45),
             () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -404,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: _buildQuickActionCard(
             AppLocalizations.of(context)!.getText('add_data'),
             Icons.add_circle_outline,
-            const Color(0xFF3B82F6),
+            const Color(0xFF6B8F3E),
             () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const InputDataScreen()),
@@ -424,16 +458,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(minHeight: 116),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          color: Colors.white.withValues(alpha: 0.88),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFDCEFE0), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: const Color(0xFF315D3E).withValues(alpha: 0.06),
               blurRadius: 10,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -442,23 +477,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: color, size: 20),
+              child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               title,
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
-                height: 1.2,
+                color: const Color(0xFF24442E),
+                height: 1.25,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -765,8 +802,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFDCEFE0)),
         ),
         child: const Center(
           child: CircularProgressIndicator(color: Color(0xFF10B981)),
@@ -775,16 +812,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFDCEFE0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF315D3E).withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -795,85 +832,95 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.wb_sunny_outlined,
-                  color: Color(0xFF3B82F6),
-                  size: 20,
+                  color: Color(0xFF287A45),
+                  size: 21,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   AppLocalizations.of(context)!.getText('weather_forecast'),
                   style: GoogleFonts.inter(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
+                    color: const Color(0xFF183B27),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (_weatherIsStale)
-                const Padding(
-                  padding: EdgeInsets.only(left: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
                   child: Tooltip(
-                    message: 'Showing cached weather data',
-                    child: Icon(Icons.history, size: 18, color: Colors.orange),
+                    message: AppLocalizations.of(
+                      context,
+                    )!.getText('home_cached_weather'),
+                    child: const Icon(
+                      Icons.history,
+                      size: 20,
+                      color: Color(0xFF9A6B18),
+                    ),
                   ),
                 ),
               const Spacer(),
               IconButton(
-                tooltip: 'Refresh weather',
+                tooltip: AppLocalizations.of(
+                  context,
+                )!.getText('home_refresh_weather'),
                 onPressed: _isLoadingWeather
                     ? null
                     : () {
                         setState(() => _isLoadingWeather = true);
                         _loadWeatherData();
                       },
-                icon: const Icon(Icons.refresh),
+                style: IconButton.styleFrom(
+                  foregroundColor: const Color(0xFF287A45),
+                  backgroundColor: const Color(0xFFF0F7F1),
+                  minimumSize: const Size(44, 44),
+                ),
+                icon: const Icon(Icons.refresh, size: 21),
               ),
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
 
           // Current Weather Information
           if (_currentWeather != null) ...[
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  width: 1,
-                ),
+                color: const Color(0xFFF4F9F3),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Current weather header
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.getText('current_weather'),
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF111827),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.of(
+                            context,
+                          )!.getText('current_weather'),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF52705B),
+                          ),
                         ),
                       ),
-                      Expanded(
+                      const SizedBox(width: 8),
+                      Flexible(
                         child: Text(
                           _currentWeather!.cityName,
                           style: GoogleFonts.inter(
@@ -882,132 +929,96 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           textAlign: TextAlign.end,
                           maxLines: 2,
-                          softWrap: true,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Current weather details
-                  Column(
+                  const SizedBox(height: 10),
+                  Row(
                     children: [
-                      // Top row - Temperature and Humidity
-                      Row(
-                        children: [
-                          // Temperature section
-                          Expanded(
-                            flex: 1,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${_currentWeather!.temperature.round()}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF111827),
-                                        ),
-                                      ),
-                                      Text(
-                                        '°C',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: const Color(0xFF6B7280),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.getText('temperature'),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: const Color(0xFF6B7280),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Humidity section
-                          Expanded(
-                            flex: 1,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    '${_currentWeather!.humidity}%',
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${_currentWeather!.temperature.round()}',
                                     style: GoogleFonts.inter(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF3B82F6),
+                                      fontSize: 42,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1,
+                                      color: const Color(0xFF183B27),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.getText('humidity'),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: const Color(0xFF6B7280),
-                                    fontWeight: FontWeight.w500,
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      '°C',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF52705B),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Bottom row - Climate
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFF3B82F6).withOpacity(0.2),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _getWeatherIcon(_currentWeather!.description),
-                              size: 18,
-                              color: const Color(0xFF3B82F6),
-                            ),
-                            const SizedBox(width: 6),
+                            const SizedBox(height: 4),
                             Text(
-                              _currentWeather!.description,
+                              AppLocalizations.of(
+                                context,
+                              )!.getText('temperature'),
                               style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF3B82F6),
+                                fontSize: 12,
+                                color: const Color(0xFF6B7280),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 1,
+                        height: 54,
+                        color: const Color(0xFFDCE8D9),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                _getWeatherIcon(_currentWeather!.description),
+                                size: 21,
+                                color: const Color(0xFF6B8F3E),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _currentWeather!.description,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.2,
+                                  color: const Color(0xFF24442E),
+                                ),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -1015,11 +1026,49 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.water_drop_outlined,
+                          size: 16,
+                          color: Color(0xFF6B8F3E),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_currentWeather!.humidity}%',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF24442E),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          AppLocalizations.of(context)!.getText('humidity'),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
           ],
 
           // 5-Day Forecast
@@ -1027,14 +1076,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(
               AppLocalizations.of(context)!.getText('five_day_forecast'),
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF111827),
+                color: const Color(0xFF24442E),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 90,
+              height: 96,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: _weatherForecast.length,
@@ -1043,21 +1092,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   final isToday = index == 0;
 
                   return Container(
-                    width: 70,
+                    width: 76,
                     margin: EdgeInsets.only(
-                      right: index < _weatherForecast.length - 1 ? 16 : 0,
+                      right: index < _weatherForecast.length - 1 ? 8 : 0,
                     ),
                     decoration: BoxDecoration(
                       color: isToday
-                          ? const Color(0xFF3B82F6).withOpacity(0.1)
-                          : const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(12),
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFF7F9F6),
+                      borderRadius: BorderRadius.circular(14),
                       border: isToday
-                          ? Border.all(color: const Color(0xFF3B82F6), width: 1)
+                          ? Border.all(color: const Color(0xFFB7D7BC), width: 1)
                           : null,
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 7,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -1066,20 +1118,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ? AppLocalizations.of(context)!.getText('today')
                                 : _formatForecastDate(forecast.date),
                             style: GoogleFonts.inter(
-                              fontSize: 10,
+                              fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: isToday
-                                  ? const Color(0xFF3B82F6)
+                                  ? const Color(0xFF287A45)
                                   : const Color(0xFF6B7280),
                             ),
+                            maxLines: 2,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 6),
                           Icon(
                             _getWeatherIcon(forecast.description),
-                            size: 20,
+                            size: 19,
                             color: isToday
-                                ? const Color(0xFF3B82F6)
-                                : const Color(0xFF9CA3AF),
+                                ? const Color(0xFF287A45)
+                                : const Color(0xFF7C8B7D),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -1088,8 +1143,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: isToday
-                                  ? const Color(0xFF3B82F6)
-                                  : const Color(0xFF111827),
+                                  ? const Color(0xFF287A45)
+                                  : const Color(0xFF24442E),
                             ),
                           ),
                         ],
@@ -1101,11 +1156,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ],
           if (_currentWeather == null && _weatherForecast.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
-                'Weather is unavailable. Check location permission or try again.',
+                AppLocalizations.of(
+                  context,
+                )!.getText('home_weather_unavailable'),
                 textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: const Color(0xFF6B7280),
+                ),
               ),
             ),
         ],
@@ -1119,8 +1180,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFDCEFE0)),
         ),
         child: const Center(
           child: CircularProgressIndicator(color: Color(0xFF10B981)),
@@ -1130,16 +1191,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (_soilData == null || _soilData!.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFDCEFE0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: const Color(0xFF315D3E).withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -1149,16 +1210,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
                     Icons.science_outlined,
-                    color: Color(0xFF10B981),
-                    size: 20,
+                    color: Color(0xFF287A45),
+                    size: 22,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1166,39 +1227,54 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: Text(
                     AppLocalizations.of(context)!.getText('soil_analysis'),
                     style: GoogleFonts.inter(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827),
+                      color: const Color(0xFF183B27),
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
-              'No soil data saved yet. Add your soil test metrics to get personalized crop recommendations.',
+              AppLocalizations.of(context)!.getText('home_no_soil_data'),
               style: GoogleFonts.inter(
                 fontSize: 14,
+                height: 1.45,
                 color: const Color(0xFF6B7280),
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const InputDataScreen(),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const InputDataScreen(),
+                    ),
+                  ).then((_) => _loadSoilData());
+                },
+                icon: const Icon(Icons.add_circle_outline, size: 19),
+                label: Text(
+                  AppLocalizations.of(context)!.getText('home_add_soil_data'),
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF287A45),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 13,
                   ),
-                ).then((_) => _loadSoilData());
-              },
-              icon: const Icon(Icons.add_circle_outline, size: 18),
-              label: const Text('Add Soil Data'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -1213,16 +1289,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final k = _soilData!['potassium'];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFDCEFE0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF315D3E).withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -1232,16 +1308,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.science_outlined,
-                  color: Color(0xFF10B981),
-                  size: 20,
+                  color: Color(0xFF287A45),
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1249,9 +1325,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Text(
                   AppLocalizations.of(context)!.getText('soil_analysis'),
                   style: GoogleFonts.inter(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
+                    color: const Color(0xFF183B27),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1259,67 +1335,63 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSoilParameter(
-                  AppLocalizations.of(context)!.getText('ph_level_short'),
-                  ph != null ? ph.toStringAsFixed(1) : '--',
-                  ph != null && ph >= 6.0 && ph <= 7.5 ? 'Optimal' : 'Saved',
-                  Colors.green,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildSoilParameter(
-                  AppLocalizations.of(context)!.getText('nitrogen'),
-                  n != null ? n.toStringAsFixed(0) : '--',
-                  'Saved',
-                  Colors.blue,
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSoilParameter(
-                  'Phosphorus (P)',
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const spacing = 10.0;
+              final columns = constraints.maxWidth < 260 ? 1 : 2;
+              final itemWidth =
+                  (constraints.maxWidth - spacing * (columns - 1)) / columns;
+              final localization = AppLocalizations.of(context)!;
+              final parameters = [
+                (
+                  localization.getText('ph_level_short'),
+                  ph != null ? ph.toStringAsFixed(1) : '--',
+                  ph != null && ph >= 6.0 && ph <= 7.5
+                      ? localization.getText('optimal')
+                      : localization.getText('home_saved_status'),
+                ),
+                (
+                  localization.getText('nitrogen'),
+                  n != null ? n.toStringAsFixed(0) : '--',
+                  localization.getText('home_saved_status'),
+                ),
+                (
+                  localization.getText('home_phosphorus'),
                   p != null ? p.toStringAsFixed(0) : '--',
-                  'Saved',
-                  Colors.orange,
+                  localization.getText('home_saved_status'),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildSoilParameter(
-                  'Potassium (K)',
+                (
+                  localization.getText('home_potassium'),
                   k != null ? k.toStringAsFixed(0) : '--',
-                  'Saved',
-                  Colors.purple,
+                  localization.getText('home_saved_status'),
                 ),
-              ),
-            ],
+              ];
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  for (final (title, value, status) in parameters)
+                    SizedBox(
+                      width: itemWidth,
+                      child: _buildSoilParameter(title, value, status),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSoilParameter(
-    String title,
-    String value,
-    String status,
-    Color color,
-  ) {
+  Widget _buildSoilParameter(String title, String value, String status) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        color: const Color(0xFFF4F8F1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2EBDD)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1328,27 +1400,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             title,
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: const Color(0xFF6B7280),
-              fontWeight: FontWeight.w500,
+              height: 1.25,
+              color: const Color(0xFF52705B),
+              fontWeight: FontWeight.w600,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 7),
           Text(
             value,
             style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF111827),
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF183B27),
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 5),
           Text(
             status,
             style: GoogleFonts.inter(
-              fontSize: 10,
-              color: color,
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              height: 1.25,
+              color: const Color(0xFF6B8F3E),
+              fontWeight: FontWeight.w600,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1390,7 +1468,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 12),
               Text(
-                'Market Trends',
+                AppLocalizations.of(context)!.getText('home_market_trends'),
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -1411,7 +1489,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   );
                 },
                 child: Text(
-                  'View All',
+                  AppLocalizations.of(context)!.getText('home_view_all'),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -1487,7 +1565,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  'Profit',
+                  AppLocalizations.of(context)!.getText('home_profit'),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: const Color(0xFF6B7280),
@@ -1512,7 +1590,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  'Yield',
+                  AppLocalizations.of(context)!.getText('home_yield'),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: const Color(0xFF6B7280),
@@ -1537,7 +1615,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  'Sustain',
+                  AppLocalizations.of(context)!.getText('home_sustainability'),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: const Color(0xFF6B7280),
@@ -1556,7 +1634,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                'Recommended',
+                AppLocalizations.of(context)!.getText('home_recommended'),
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
@@ -1570,8 +1648,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   String _formatForecastDate(DateTime date) {
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days[date.weekday - 1];
+    const weekdayKeys = [
+      'home_weekday_mon',
+      'home_weekday_tue',
+      'home_weekday_wed',
+      'home_weekday_thu',
+      'home_weekday_fri',
+      'home_weekday_sat',
+      'home_weekday_sun',
+    ];
+    return AppLocalizations.of(context)!.getText(weekdayKeys[date.weekday - 1]);
   }
 
   IconData _getWeatherIcon(String description) {

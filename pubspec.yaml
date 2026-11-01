@@ -51,6 +51,7 @@ dependencies:
   firebase_core: ^3.15.2
   firebase_auth: ^5.6.2
   cloud_firestore: ^5.6.12
+  tflite_flutter: ^0.12.1
 
 dev_dependencies:
   flutter_test:
@@ -81,6 +82,7 @@ flutter:
     - .env
     - assets/images/logo.png
     - assets/images/app-logo.jpg
+    - assets/models/plant_disease_38.tflite
     - ml/output/crop_model_6feature_compatible.onnx
     - jeevandhara_tomato_model/tomato_mobilenet_v3_small.onnx
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../localization/app_localizations.dart';
 import '../../services/soil_data_service.dart';
 
 class InputDataScreen extends StatefulWidget {
@@ -41,12 +42,12 @@ class _InputDataScreenState extends State<InputDataScreen>
   double _phosphorusValue = 82.0;
   double _potassiumValue = 71.0;
 
-  // Parameter info for tooltips
+  // Parameter tooltip translation keys.
   final Map<String, String> _parameterInfo = {
-    'pH': 'Soil pH level (4.0-9.0)\nOptimal range: 6.0-7.5',
-    'Nitrogen': 'Nitrogen content (0-100%)\nEssential for leaf growth',
-    'Phosphorus': 'Phosphorus content (0-100%)\nImportant for root development',
-    'Potassium': 'Potassium content (0-100%)\nHelps with disease resistance',
+    'pH': 'input_ph_tooltip',
+    'Nitrogen': 'input_nitrogen_tooltip',
+    'Phosphorus': 'input_phosphorus_tooltip',
+    'Potassium': 'input_potassium_tooltip',
   };
 
   @override
@@ -90,11 +91,13 @@ class _InputDataScreenState extends State<InputDataScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to load existing soil data.'),
+          content: Text(
+            AppLocalizations.of(context)!.getText('input_load_failed'),
+          ),
           backgroundColor: Colors.orange[800],
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
-            label: 'Retry',
+            label: AppLocalizations.of(context)!.getText('retry'),
             textColor: Colors.white,
             onPressed: _loadSavedData,
           ),
@@ -158,8 +161,12 @@ class _InputDataScreenState extends State<InputDataScreen>
               children: [
                 Tooltip(
                   message: _useSliders
-                      ? 'Switch to text input'
-                      : 'Switch to sliders',
+                      ? AppLocalizations.of(
+                          context,
+                        )!.getText('input_switch_to_text')
+                      : AppLocalizations.of(
+                          context,
+                        )!.getText('input_switch_to_sliders'),
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -241,7 +248,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Input Data',
+                                AppLocalizations.of(
+                                  context,
+                                )!.getText('input_title'),
                                 style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -249,7 +258,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                                 ),
                               ),
                               Text(
-                                'Soil and field parameters',
+                                AppLocalizations.of(
+                                  context,
+                                )!.getText('input_subtitle'),
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   color: const Color(0xFF6B7280),
@@ -305,7 +316,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'Soil Information',
+                              AppLocalizations.of(
+                                context,
+                              )!.getText('input_soil_information'),
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -379,7 +392,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'Nutrients (NPK)',
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.getText('input_nutrients'),
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -387,6 +402,19 @@ class _InputDataScreenState extends State<InputDataScreen>
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 4),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.getText('input_nutrients_help'),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: const Color(0xFF6B7280),
+                                  ),
+                                ),
                               ),
 
                               const SizedBox(height: 12),
@@ -403,6 +431,7 @@ class _InputDataScreenState extends State<InputDataScreen>
                                       SizedBox(
                                         width: fieldWidth,
                                         child: _buildCompactNutrientField(
+                                          'Nitrogen',
                                           'N',
                                           _nitrogenController,
                                           const Color(0xFF10B981),
@@ -419,6 +448,7 @@ class _InputDataScreenState extends State<InputDataScreen>
                                       SizedBox(
                                         width: fieldWidth,
                                         child: _buildCompactNutrientField(
+                                          'Phosphorus',
                                           'P',
                                           _phosphorusController,
                                           const Color(0xFF3B82F6),
@@ -435,6 +465,7 @@ class _InputDataScreenState extends State<InputDataScreen>
                                       SizedBox(
                                         width: fieldWidth,
                                         child: _buildCompactNutrientField(
+                                          'Potassium',
                                           'K',
                                           _potassiumController,
                                           const Color(0xFFF59E0B),
@@ -488,7 +519,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'Weather',
+                              AppLocalizations.of(
+                                context,
+                              )!.getText('input_weather'),
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -500,10 +533,13 @@ class _InputDataScreenState extends State<InputDataScreen>
                         const SizedBox(height: 12),
                         _buildAutomaticWeatherRow(
                           Icons.thermostat,
-                          'Temperature',
+                          AppLocalizations.of(context)!.getText('temperature'),
                         ),
                         const SizedBox(height: 8),
-                        _buildAutomaticWeatherRow(Icons.water_drop, 'Humidity'),
+                        _buildAutomaticWeatherRow(
+                          Icons.water_drop,
+                          AppLocalizations.of(context)!.getText('humidity'),
+                        ),
                       ],
                     ),
                   ),
@@ -540,7 +576,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Saving...',
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.getText('input_saving'),
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -554,7 +592,9 @@ class _InputDataScreenState extends State<InputDataScreen>
                                 const Icon(Icons.save, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Save Soil Data',
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.getText('input_save'),
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -586,6 +626,12 @@ class _InputDataScreenState extends State<InputDataScreen>
     int decimals,
     Function(double) onChanged,
   ) {
+    final localizations = AppLocalizations.of(context)!;
+    final localizedLabel = label == 'pH'
+        ? label
+        : localizations.getText(
+            label == 'Nitrogen' ? 'nitrogen' : 'input_${label.toLowerCase()}',
+          );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -595,19 +641,32 @@ class _InputDataScreenState extends State<InputDataScreen>
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 4),
             Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF111827),
+              child: Tooltip(
+                message: localizations.getText(_parameterInfo[label] ?? label),
+                child: Text(
+                  localizedLabel,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF111827),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
+        if (label == 'pH') ...[
+          Text(
+            localizations.getText('input_ph_measure'),
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
         if (_useSliders) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -665,11 +724,15 @@ class _InputDataScreenState extends State<InputDataScreen>
               ),
             ],
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Required';
+              if (value == null || value.isEmpty) {
+                return localizations.getText('input_ph_required');
+              }
               final numValue = double.tryParse(value);
-              if (numValue == null) return 'Invalid';
+              if (numValue == null) {
+                return localizations.getText('input_ph_numeric');
+              }
               if (numValue < min || numValue > max) {
-                return '${min.toStringAsFixed(decimals)}-${max.toStringAsFixed(decimals)}';
+                return localizations.getText('input_ph_range');
               }
               return null;
             },
@@ -698,6 +761,7 @@ class _InputDataScreenState extends State<InputDataScreen>
                 horizontal: 8,
                 vertical: 10,
               ),
+              hintText: '4.0-9.0',
               isDense: true,
             ),
             style: GoogleFonts.inter(
@@ -713,12 +777,17 @@ class _InputDataScreenState extends State<InputDataScreen>
   }
 
   Widget _buildCompactNutrientField(
+    String label,
     String symbol,
     TextEditingController controller,
     Color color,
     double value,
     Function(double) onChanged,
   ) {
+    final localizations = AppLocalizations.of(context)!;
+    final localizedLabel = localizations.getText(
+      label == 'Nitrogen' ? 'nitrogen' : 'input_${label.toLowerCase()}',
+    );
     return Column(
       children: [
         Container(
@@ -733,6 +802,19 @@ class _InputDataScreenState extends State<InputDataScreen>
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: color,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Tooltip(
+          message: localizations.getText(_parameterInfo[label] ?? label),
+          child: Text(
+            localizedLabel,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF4B5563),
             ),
           ),
         ),
@@ -788,10 +870,20 @@ class _InputDataScreenState extends State<InputDataScreen>
               FilteringTextInputFormatter.allow(RegExp(r'^\d{0,3}')),
             ],
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Required';
+              if (value == null || value.isEmpty) {
+                return localizations
+                    .getText('input_parameter_required')
+                    .replaceAll('{parameter}', localizedLabel);
+              }
               final numValue = double.tryParse(value);
-              if (numValue == null) return 'Invalid';
-              if (numValue < 0 || numValue > 100) return '0-100';
+              if (numValue == null) {
+                return localizations.getText('input_nutrient_numeric');
+              }
+              if (numValue < 0 || numValue > 100) {
+                return localizations
+                    .getText('input_parameter_range')
+                    .replaceAll('{parameter}', localizedLabel);
+              }
               return null;
             },
             onChanged: (value) {
@@ -815,6 +907,7 @@ class _InputDataScreenState extends State<InputDataScreen>
                 horizontal: 6,
                 vertical: 8,
               ),
+              hintText: '0-100',
               suffixText: '%',
               suffixStyle: GoogleFonts.inter(
                 fontSize: 11,
@@ -838,7 +931,9 @@ class _InputDataScreenState extends State<InputDataScreen>
   Future<void> _saveData() async {
     // Validate form
     if (!_formKey.currentState!.validate()) {
-      _showErrorSnackBar('Please fill in all fields correctly');
+      _showErrorSnackBar(
+        AppLocalizations.of(context)!.getText('input_validation_error'),
+      );
       return;
     }
 
@@ -894,14 +989,18 @@ class _InputDataScreenState extends State<InputDataScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Soil data saved successfully!',
+                        AppLocalizations.of(
+                          context,
+                        )!.getText('input_saved_success'),
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
                       Text(
-                        'Check the Advice screen for crop recommendations',
+                        AppLocalizations.of(
+                          context,
+                        )!.getText('input_saved_advice'),
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -926,7 +1025,11 @@ class _InputDataScreenState extends State<InputDataScreen>
         if (mounted) Navigator.pop(context, true);
       }
     } catch (e) {
-      if (mounted) _showErrorSnackBar('Failed to save data. Please try again.');
+      if (mounted) {
+        _showErrorSnackBar(
+          AppLocalizations.of(context)!.getText('input_save_failed'),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -951,7 +1054,7 @@ class _InputDataScreenState extends State<InputDataScreen>
         ),
         const SizedBox(width: 4),
         Text(
-          'Automatically detected',
+          AppLocalizations.of(context)!.getText('input_automatically_detected'),
           style: GoogleFonts.inter(
             fontSize: 13,
             color: const Color(0xFF6B7280),
